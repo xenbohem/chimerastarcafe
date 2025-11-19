@@ -496,4 +496,488 @@ body::after {
 <!-- ------------------------------------------------------
      IMPORTANT: PART 3 (FULL JS) WILL GO BELOW THIS LINE
 ------------------------------------------------------ -->
+<script>
 
+/* ======================================================
+    GLOBAL GAME STATE
+====================================================== */
+
+let gameState = {
+    loggedIn: false,
+    username: "",
+    mute:false,
+    volume:0.4,
+
+    progress:{
+        metStar:false,
+        metHans:false,
+        metMilo:false,
+        solvedMiki:false,
+        metChari:false,
+        unlockedMusic:false,
+        unlockedEnlightenment:false,
+        inventory:[],
+        codex:[]
+    }
+};
+
+/* ======================================================
+    SAVE / LOAD
+====================================================== */
+
+function saveGame(){
+    localStorage.setItem("chimeraCafeSave", JSON.stringify(gameState));
+}
+
+function loadGame(){
+    let data = localStorage.getItem("chimeraCafeSave");
+    if(data){
+        try { gameState = JSON.parse(data); } catch(e){}
+    }
+}
+
+loadGame();
+
+/* ======================================================
+    LOGIN / LOGOUT
+====================================================== */
+
+function loginUser(){
+    let name = document.getElementById("usernameInput").value.trim();
+    if(!name) return;
+
+    gameState.loggedIn = true;
+    gameState.username = name;
+    saveGame();
+
+    document.getElementById("loginScreen").style.display = "none";
+    document.getElementById("logoutBtn").style.display = "inline-block";
+}
+
+function logoutUser(){
+    localStorage.removeItem("chimeraCafeSave");
+    location.reload();
+}
+
+/* ======================================================
+    SOUND SYSTEM
+====================================================== */
+
+let windChime = new Audio("data:audio/mp3;base64,INSERT_BASE64_CHIME");
+
+windChime.volume = gameState.volume;
+
+function playChime(){
+    if(!gameState.mute){
+        windChime.currentTime = 0;
+        windChime.play();
+    }
+}
+
+function toggleMute(){
+    gameState.mute = !gameState.mute;
+    saveGame();
+    document.getElementById("muteBtn").innerText = gameState.mute ? "Unmute" : "Mute";
+}
+
+function changeVolume(v){
+    gameState.volume = v;
+    windChime.volume = v;
+    saveGame();
+}
+
+/* ======================================================
+    POPUP SYSTEM
+====================================================== */
+
+function openPopup(title, html){
+    let wrap = document.getElementById("popupWrapper");
+    let win = document.getElementById("popupWindow");
+    win.innerHTML = `<h2>${title}</h2>${html}<br><button onclick="closePopup()">Close</button>`;
+    wrap.style.display = "flex";
+}
+
+function closePopup(){
+    document.getElementById("popupWrapper").style.display = "none";
+}
+
+/* ======================================================
+    INVENTORY SYSTEM
+====================================================== */
+
+function toggleInventory(){
+    let drawer = document.getElementById("inventoryDrawer");
+    let rune = document.getElementById("umbrellaRune");
+
+    playChime();
+
+    if(drawer.style.right === "0px"){
+        drawer.style.right = "-360px";
+        rune.classList.remove("umbrellaOpen");
+    } else {
+        drawer.style.right = "0px";
+        rune.classList.add("umbrellaOpen");
+        refreshInventory();
+    }
+}
+
+function addItem(itemName, desc){
+    gameState.progress.inventory.push({name:itemName, desc});
+    saveGame();
+    refreshInventory();
+}
+
+function refreshInventory(){
+    let cont = document.getElementById("inventoryContent");
+    cont.innerHTML = "";
+    gameState.progress.inventory.forEach(it=>{
+        cont.innerHTML += `
+            <div class="invItem">
+                <div class="invItemTitle">${it.name}</div>
+                <div>${it.desc}</div>
+            </div>
+        `;
+    });
+}
+
+/* ======================================================
+    TILE THUMBNAIL SYSTEM
+====================================================== */
+
+const thumbnails = {
+    star:"images/star.png",
+    hans:"images/hans.png",
+    milo:"images/milo.png",
+    miki:"images/miki.png",
+    chari:"images/chari.png",
+
+    cafe:"images/cafe.png",
+    cafeInterior:"images/cafeInterior.png",
+    loreHall:"images/loreHall.png",
+    musicDoor:"images/musicDoor.png",
+    clue1:"images/clue1.png",
+    clue2:"images/clue2.png",
+    clue3:"images/clue3.png",
+    clue4:"images/clue4.png",
+
+    /* Fill in your own custom images for the rest */
+};
+
+function assignThumbnails(){
+    let tiles = document.querySelectorAll(".tile");
+    tiles.forEach(t=>{
+        let id = t.getAttribute("data-id");
+        t.innerHTML = `<img src="images/default${id}.jpg">`;
+    });
+
+    /* Assign known special ones */
+    document.querySelector('.tile[data-id="3"]').innerHTML = `<img src="${thumbnails.hans}">`;
+    document.querySelector('.tile[data-id="1"]').innerHTML = `<img src="${thumbnails.star}">`;
+    document.querySelector('.tile[data-id="7"]').innerHTML = `<img src="${thumbnails.milo}">`;
+    document.querySelector('.tile[data-id="9"]').innerHTML = `<img src="${thumbnails.miki}">`;
+    document.querySelector('.tile[data-id="12"]').innerHTML = `<img src="${thumbnails.chari}">`;
+
+    document.querySelector('.tile[data-id="18"]').innerHTML = `<img src="${thumbnails.cafe}">`;
+    document.querySelector('.tile[data-id="19"]').innerHTML = `<img src="${thumbnails.cafeInterior}">`;
+
+    document.querySelector('.tile[data-id="6"]').innerHTML = `<img src="${thumbnails.musicDoor}">`;
+
+    document.querySelector('.tile[data-id="22"]').innerHTML = `<img src="${thumbnails.clue1}">`;
+    document.querySelector('.tile[data-id="23"]').innerHTML = `<img src="${thumbnails.clue2}">`;
+    document.querySelector('.tile[data-id="24"]').innerHTML = `<img src="${thumbnails.clue3}">`;
+    document.querySelector('.tile[data-id="25"]').innerHTML = `<img src="${thumbnails.clue4}">`;
+}
+
+assignThumbnails();
+
+/* ======================================================
+    TILE ACTION ROUTER
+====================================================== */
+
+function tileAction(id){
+    playChime();
+    switch(id){
+        case 1: openStarChat(); break;
+        case 3: openHansChat(); break;
+        case 7: openMiloChat(); break;
+        case 9: openMikiChat(); break;
+        case 12: openChariChat(); break;
+
+        case 18: openCafeMenu(); break;
+        case 19: openCafeMenu(); break;
+
+        case 6: tryMusicRoom(); break;
+
+        case 22:
+        case 23:
+        case 24:
+        case 25:
+            openPopup("Clue", "<p>The air hums... someone is watching. Look for the tea snob.</p>");
+        break;
+
+        default:
+            openPopup("Tile", "<p>This square whispers secrets, but not yet...</p>");
+    }
+}
+
+/* ======================================================
+    STAR CHATBOT
+====================================================== */
+
+function openStarChat(){
+    gameState.progress.metStar = true;
+    saveGame();
+
+    let el = document.getElementById("starChatBox");
+    document.getElementById("starChat").style.display = "flex";
+
+    el.innerHTML = `
+        <h2>Star</h2>
+        <p>Oh… hello ${gameState.username}.  
+        Welcome to my café of shadows and soft candlelight.  
+        What brings you to this haunted little corner?</p>
+        <button onclick="closeStarChat()">Close</button>
+    `;
+}
+
+function closeStarChat(){
+    document.getElementById("starChat").style.display = "none";
+}
+
+/* ======================================================
+    HANS CHATBOT
+====================================================== */
+
+function openHansChat(){
+    gameState.progress.metHans = true;
+    saveGame();
+
+    let el = document.getElementById("hansChatBox");
+    document.getElementById("hansChat").style.display = "flex";
+
+    el.innerHTML = `
+        <h2>Hans</h2>
+        <p>"Well well well… look what the chimera-cat dragged in.  
+        ${gameState.username}, was it?  
+        Try not to spill anything this time, mm?"</p>
+
+        <button onclick="hansQ1()">He asks a snarky question</button>
+    `;
+}
+
+function hansQ1(){
+    let el = document.getElementById("hansChatBox");
+    el.innerHTML = `
+        <h2>Hans</h2>
+        <p>"Tell me, ${gameState.username}…  
+        Do you actually *like* tea, or are you here to pretend sophistication?"</p>
+
+        <button onclick="hansYes()">Yes</button>
+        <button onclick="hansNo()">No</button>
+    `;
+}
+
+function hansYes(){
+    document.getElementById("hansChatBox").innerHTML = `
+        <h2>Hans</h2>
+        <p>"Marvelous. Finally someone with taste.  
+        Here, take this lavender sprig."</p>
+        <button onclick="hansGiveTea()">Take Item</button>
+    `;
+}
+
+function hansNo(){
+    document.getElementById("hansChatBox").innerHTML = `
+        <h2>Hans</h2>
+        <p>"Tragic. Utterly tragic.  
+        Still… perhaps I can educate you."</p>
+
+        <button onclick="hansGiveTea()">He sighs and hands you something</button>
+    `;
+}
+
+function hansGiveTea(){
+    addItem("Lavender Sprig", "Hans’s begrudging gift. Smells judgmental.");
+    document.getElementById("hansChatBox").innerHTML = `
+        <h2>Hans</h2>
+        <p>"Try not to lose it."</p>
+        <button onclick="closeHansChat()">Close</button>
+    `;
+}
+
+function closeHansChat(){
+    document.getElementById("hansChat").style.display = "none";
+}
+
+/* ======================================================
+    MILO CHATBOT — ENLIGHTENMENT PATH
+====================================================== */
+
+function openMiloChat(){
+    gameState.progress.metMilo = true;
+    saveGame();
+
+    let el = document.getElementById("miloChatBox");
+    document.getElementById("miloChat").style.display = "flex";
+
+    el.innerHTML = `
+        <h2>Milo</h2>
+        <p>"Peace to you, ${gameState.username}.  
+        Sit with me. Let us breathe for a moment."</p>
+        <button onclick="miloQ1()">Continue</button>
+    `;
+}
+
+function miloQ1(){
+    let el = document.getElementById("miloChatBox");
+    el.innerHTML = `
+        <h2>Milo</h2>
+        <p>"Do you seek understanding?"</p>
+        <button onclick="miloYes()">Yes</button>
+        <button onclick="miloNo()">No</button>
+    `;
+}
+
+function miloYes(){
+    document.getElementById("miloChatBox").innerHTML = `
+        <h2>Milo</h2>
+        <p>"Then breathe deeply. A path will open."</p>
+        <button onclick="openEnlightenmentRealm()">Enter Realm</button>
+    `;
+}
+
+function miloNo(){
+    document.getElementById("miloChatBox").innerHTML = `
+        <h2>Milo</h2>
+        <p>"Even no is a path. When you're ready, return."</p>
+        <button onclick="closeMiloChat()">Close</button>
+    `;
+}
+
+function closeMiloChat(){
+    document.getElementById("miloChat").style.display = "none";
+}
+
+function openEnlightenmentRealm(){
+    gameState.progress.unlockedEnlightenment = true;
+    saveGame();
+
+    document.getElementById("miloChat").style.display = "none";
+    let el = document.getElementById("enlightenmentBox");
+    document.getElementById("enlightenmentRealm").style.display = "flex";
+
+    el.innerHTML = `
+        <h2>The Realm of Light</h2>
+        <p>A warm breeze surrounds you…  
+        Milo speaks softly:</p>
+        <p>"Salvation is offered freely by Yeshua.  
+        Romans 10:9 — If you declare with your mouth,  
+        'Jesus is Lord,' and believe in your heart that  
+        God raised Him from the dead, you will be saved."</p>
+
+        <button onclick="closeEnlightenment()">Return</button>
+    `;
+}
+
+function closeEnlightenment(){
+    document.getElementById("enlightenmentRealm").style.display = "none";
+}
+
+/* ======================================================
+    MIKI — RIDDLE / MUSIC UNLOCK
+====================================================== */
+
+function openMikiChat(){
+    let el = document.getElementById("mikiChatBox");
+    document.getElementById("mikiChat").style.display = "flex";
+
+    if(!gameState.progress.solvedMiki){
+        el.innerHTML = `
+            <h2>Miki</h2>
+            <p>"Yo ${gameState.username}!  
+               Wanna unlock my tracks? Prove you’re sharp."</p>
+            <button onclick="mikiRiddle1()">Start Riddle</button>
+        `;
+    } else {
+        el.innerHTML = `
+            <h2>Miki</h2>
+            <p>"You already solved my riddles.  
+            Music room's open."</p>
+            <button onclick="tryMusicRoom()">Go to Music Room</button>
+        `;
+    }
+}
+
+function mikiRiddle1(){
+    let el = document.getElementById("mikiChatBox");
+    el.innerHTML = `
+        <h2>Miki</h2>
+        <p>"Riddle 1:  
+        I have keys but open no doors.  
+        What am I?"</p>
+
+        <button onclick="mikiCheck('piano')">Piano</button>
+        <button onclick="mikiCheck('lock')">A Lock</button>
+    `;
+}
+
+function mikiCheck(ans){
+    if(ans === 'piano'){
+        gameState.progress.solvedMiki = true;
+        saveGame();
+        document.getElementById("mikiChatBox").innerHTML = `
+            <h2>Miki</h2>
+            <p>"Yesss! You nailed it!  
+            Music room unlocked!"</p>
+            <button onclick="closeMikiChat()">Nice</button>
+        `;
+    } else {
+        document.getElementById("mikiChatBox").innerHTML = `
+            <h2>Miki</h2>
+            <p>"Nope. Try again."</p>
+            <button onclick="mikiRiddle1()">Retry</button>
+        `;
+    }
+}
+
+function closeMikiChat(){
+    document.getElementById("mikiChat").style.display = "none";
+}
+
+/* MUSIC ROOM */
+function tryMusicRoom(){
+    if(!gameState.progress.solvedMiki){
+        openPopup("Locked", "<p>Miki hums from afar… solve her riddle first.</p>");
+        return;
+    }
+
+    document.getElementById("musicRoom").style.display = "flex";
+    document.getElementById("musicRoomBox").innerHTML = `
+        <h2>Miki's Tracks</h2>
+        <p>Choose a track to play.</p>
+
+        <audio controls>
+            <source src="music/track1.mp3" type="audio/mp3">
+        </audio><br>
+
+        <audio controls>
+            <source src="music/track2.mp3" type="audio/mp3">
+        </audio><br>
+
+        <button onclick="closeMusicRoom()">Close</button>
+    `;
+}
+
+function closeMusicRoom(){
+    document.getElementById("musicRoom").style.display = "none";
+}
+
+/* ======================================================
+    CHARI — SOFT CHAT
+====================================================== */
+
+function openChariChat(){
+    gameState.progress.metChari = true;
+    saveGame();
+
+    let el
