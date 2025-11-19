@@ -36,3 +36,65 @@ const windChimeBase64 = "data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2Z
 let windChime = new Audio(windChimeBase64);
 windChime.volume = gameState.volume;
 
+chatgpt instructions:
+HOW TO REPLACE THUMBNAILS WITH EMBEDDED BASE64
+
+In Part 3, where thumbnails is defined:
+
+const thumbnails = {
+    star: starImg,
+    hans: hansImg,
+    milo: miloImg,
+    miki: mikiImg,
+    chari: chariImg,
+
+    cafe: velvetBG,
+    cafeInterior: velvetBG,
+    loreHall: velvetBG,
+    musicDoor: velvetBG,
+    clue1: velvetBG,
+    clue2: velvetBG,
+    clue3: velvetBG,
+    clue4: velvetBG,
+};
+
+
+All images will now render without external files.
+
+🛠 TIP
+
+For the umbrella rune toggle:
+
+let runeEl = document.getElementById("umbrellaRune");
+runeEl.style.backgroundImage = `url(${umbrellaClosed})`;
+
+function toggleInventory(){
+    let drawer = document.getElementById("inventoryDrawer");
+
+    if(drawer.style.right === "0px"){
+        drawer.style.right = "-360px";
+        runeEl.style.backgroundImage = `url(${umbrellaClosed})`;
+    } else {
+        drawer.style.right = "0px";
+        runeEl.style.backgroundImage = `url(${umbrellaOpen})`;
+    }
+}
+
+
+All inventory icons can be added similarly with Base64 background-image.
+
+✅ RESULT
+
+With this Part 4 setup:
+
+All tiles have images embedded.
+
+All chatbots have portraits embedded.
+
+The umbrella drawer is fully self-contained.
+
+Wind-chime SFX is embedded.
+
+Inventory items display icons.
+
+Game is fully portable — just the single HTML file, no external assets.
