@@ -26,3 +26,13 @@ const chariImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA...";
 const lavenderSprigIcon = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA...";
 const matchaLeafIcon = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA...";
 const nightfallDustIcon = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA...";
+
+javascript
+
+/* WIND CHIME */
+const windChimeBase64 = "data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU2LjI0LjEwMAAAAAAAAAC...";
+
+/* Example usage in Part 3 */
+let windChime = new Audio(windChimeBase64);
+windChime.volume = gameState.volume;
+
