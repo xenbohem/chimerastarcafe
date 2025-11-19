@@ -1,0 +1,28 @@
+/* UMBRELLA RUNE — CLOSED */
+const umbrellaClosed = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA...";
+
+/* UMBRELLA RUNE — OPEN */
+const umbrellaOpen = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA...";
+
+/* BACKGROUND TEXTURE — VELVET */
+const velvetBG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA...";
+
+/* STAR PORTRAIT */
+const starImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA...";
+
+/* HANS PORTRAIT */
+const hansImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA...";
+
+/* MILO PORTRAIT */
+const miloImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA...";
+
+/* MIKI PORTRAIT */
+const mikiImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA...";
+
+/* CHARi PORTRAIT */
+const chariImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA...";
+
+/* INVENTORY ITEM ICONS */
+const lavenderSprigIcon = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA...";
+const matchaLeafIcon = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA...";
+const nightfallDustIcon = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA...";
