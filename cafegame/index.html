@@ -312,3 +312,136 @@ body::after {
 
 </style>
 </head>
+<body>
+
+<!-- ------------------------------------------------------
+     LOGIN SCREEN
+------------------------------------------------------ -->
+<div id="loginScreen" class="popupBG" style="display:flex;">
+    <div class="popup">
+        <h2>Welcome to Chimera Café</h2>
+        <p>Enter your gamer name to begin your journey:</p>
+        <input id="usernameInput" type="text" style="width:95%; padding:8px; background:#281d3f; border:1px solid #6c3aff; color:#fff;">
+        <button onclick="loginUser()">Enter</button>
+    </div>
+</div>
+
+<!-- ------------------------------------------------------
+     LOGOUT BUTTON
+------------------------------------------------------ -->
+<div id="logoutBtn" class="uiButton" style="position:fixed; top:8px; left:8px; z-index:2600; display:none;" onclick="logoutUser()">
+    Log Out
+</div>
+
+<!-- ------------------------------------------------------
+     SOUND CONTROLS
+------------------------------------------------------ -->
+<div id="soundControls">
+    <button id="muteBtn" onclick="toggleMute()">Mute</button>
+    <input id="volumeSlider" type="range" min="0" max="1" step="0.01" onchange="changeVolume(this.value)">
+</div>
+
+<!-- ------------------------------------------------------
+     UMBRELLA RUNE — INVENTORY TOGGLE
+------------------------------------------------------ -->
+<div id="umbrellaRune" onclick="toggleInventory()"></div>
+
+<!-- ------------------------------------------------------
+     INVENTORY DRAWER
+------------------------------------------------------ -->
+<div id="inventoryDrawer">
+    <h2>Inventory</h2>
+    <div id="inventoryContent">
+        <!-- JS will populate inventory items here -->
+    </div>
+</div>
+
+<!-- ------------------------------------------------------
+     GAME GRID — 36 TILES
+------------------------------------------------------ -->
+<div id="gameGrid">
+
+    <!-- Tiles 1–36 -->
+    <!-- IMPORTANT: You will assign thumbnail images in Part 3 -->
+    <!-- The data-id attribute will allow routing to special functions -->
+
+    <!-- Row 1 -->
+    <div class="tile" data-id="1" onclick="tileAction(1)"></div>
+    <div class="tile" data-id="2" onclick="tileAction(2)"></div>
+    <div class="tile" data-id="3" onclick="tileAction(3)"></div>
+    <div class="tile" data-id="4" onclick="tileAction(4)"></div>
+    <div class="tile" data-id="5" onclick="tileAction(5)"></div>
+    <div class="tile" data-id="6" onclick="tileAction(6)"></div>
+
+    <!-- Row 2 -->
+    <div class="tile" data-id="7" onclick="tileAction(7)"></div>
+    <div class="tile" data-id="8" onclick="tileAction(8)"></div>
+    <div class="tile" data-id="9" onclick="tileAction(9)"></div>
+    <div class="tile" data-id="10" onclick="tileAction(10)"></div>
+    <div class="tile" data-id="11" onclick="tileAction(11)"></div>
+    <div class="tile" data-id="12" onclick="tileAction(12)"></div>
+
+    <!-- Row 3 -->
+    <div class="tile" data-id="13" onclick="tileAction(13)"></div>
+    <div class="tile" data-id="14" onclick="tileAction(14)"></div>
+    <div class="tile" data-id="15" onclick="tileAction(15)"></div>
+    <div class="tile" data-id="16" onclick="tileAction(16)"></div>
+    <div class="tile" data-id="17" onclick="tileAction(17)"></div>
+    <div class="tile" data-id="18" onclick="tileAction(18)"></div>
+
+    <!-- Row 4 -->
+    <div class="tile" data-id="19" onclick="tileAction(19)"></div>
+    <div class="tile" data-id="20" onclick="tileAction(20)"></div>
+    <div class="tile" data-id="21" onclick="tileAction(21)"></div>
+    <div class="tile" data-id="22" onclick="tileAction(22)"></div>
+    <div class="tile" data-id="23" onclick="tileAction(23)"></div>
+    <div class="tile" data-id="24" onclick="tileAction(24)"></div>
+
+    <!-- Row 5 -->
+    <div class="tile" data-id="25" onclick="tileAction(25)"></div>
+    <div class="tile" data-id="26" onclick="tileAction(26)"></div>
+    <div class="tile" data-id="27" onclick="tileAction(27)"></div>
+    <div class="tile" data-id="28" onclick="tileAction(28)"></div>
+    <div class="tile" data-id="29" onclick="tileAction(29)"></div>
+    <div class="tile" data-id="30" onclick="tileAction(30)"></div>
+
+    <!-- Row 6 -->
+    <div class="tile" data-id="31" onclick="tileAction(31)"></div>
+    <div class="tile" data-id="32" onclick="tileAction(32)"></div>
+    <div class="tile" data-id="33" onclick="tileAction(33)"></div>
+    <div class="tile" data-id="34" onclick="tileAction(34)"></div>
+    <div class="tile" data-id="35" onclick="tileAction(35)"></div>
+    <div class="tile" data-id="36" onclick="tileAction(36)"></div>
+
+</div>
+
+<!-- ------------------------------------------------------
+     UNIVERSAL POPUP HANDLER
+------------------------------------------------------ -->
+<div id="popupWrapper" class="popupBG">
+    <div id="popupWindow" class="popup"></div>
+</div>
+
+<!-- ------------------------------------------------------
+     CHAT WINDOWS
+------------------------------------------------------ -->
+
+<!-- Star (Gothic Owner) -->
+<div id="starChat" class="popupBG">
+    <div class="popup" id="starChatBox"></div>
+</div>
+
+<!-- Hans (Tea Snob) -->
+<div id="hansChat" class="popupBG">
+    <div class="popup" id="hansChatBox"></div>
+</div>
+
+<!-- Milo (Zen Taoist Christian) -->
+<div id="miloChat" class="popupBG">
+    <div class="popup" id="miloChatBox"></div>
+</div>
+
+<!-- Miki (Musician Riddle Master) -->
+<div id="mikiChat" class="popupBG">
+    <div class="popup" id="mikiChatBox"></div>
+</div>
