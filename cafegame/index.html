@@ -980,4 +980,104 @@ function openChariChat(){
     gameState.progress.metChari = true;
     saveGame();
 
-    let el
+    let el = document.getElementById("chariChatBox");
+    document.getElementById("chariChat").style.display = "flex";
+
+    el.innerHTML = `
+        <h2>Chari</h2>
+        <p>"Hi… ${gameState.username}.  
+        I… um… I hope you're doing okay."</p>
+        <button onclick="closeChariChat()">Close</button>
+    `;
+}
+
+function closeChariChat(){
+    document.getElementById("chariChat").style.display = "none";
+}
+
+/* ======================================================
+    CAFE MENU
+====================================================== */
+
+function openCafeMenu(){
+    let el = document.getElementById("cafeMenuBox");
+    document.getElementById("cafeMenu").style.display = "flex";
+
+    el.innerHTML = `
+        <h2>Chimera Café</h2>
+        <p>Select a drink:</p>
+
+        <button onclick="brewTea('lavender')">Lavender Tea</button>
+        <button onclick="brewTea('matcha')">Matcha Green</button>
+        <button onclick="brewTea('nightfall')">Nightfall Mocha</button>
+
+        <br><br>
+        <button onclick="closeCafeMenu()">Close</button>
+    `;
+}
+
+function brewTea(type){
+    let msg = "";
+    if(type === "lavender"){
+        msg = "Soothing. You feel calmer.";
+        addItem("Lavender Mist", "A calming aroma surrounds it.");
+    }
+    if(type === "matcha"){
+        msg = "Miki smiles — she loves matcha.";
+        addItem("Matcha Leaf", "Vibrant and electric.");
+    }
+    if(type === "nightfall"){
+        msg = "The shadows curl… something ancient awakens.";
+        addItem("Nightfall Dust", "A shimmering dark powder.");
+    }
+
+    openPopup("Brewed", `<p>${msg}</p>`);
+}
+
+function closeCafeMenu(){
+    document.getElementById("cafeMenu").style.display = "none";
+}
+
+/* ======================================================
+    SOCIAL FADE PORTAL
+====================================================== */
+
+function openSocialFade(url){
+    playChime();
+    let lay = document.createElement("div");
+    lay.style = `
+        position:fixed; inset:0;
+        background:rgba(0,0,0,0);
+        z-index:5000;
+        animation: fadeMystery 1.2s forwards;
+    `;
+    document.body.appendChild(lay);
+
+    setTimeout(()=>{ window.open(url, "_blank"); }, 900);
+    setTimeout(()=>{ lay.remove(); }, 2000);
+}
+
+/* ======================================================
+    HIDE POPUPS ON CLICK OUTSIDE
+====================================================== */
+
+document.querySelectorAll(".popupBG").forEach(bg=>{
+    bg.addEventListener("click", e=>{
+        if(e.target.classList.contains("popupBG")){
+            bg.style.display = "none";
+        }
+    });
+});
+
+/* ======================================================
+    GAME START
+====================================================== */
+
+if(gameState.loggedIn){
+    document.getElementById("loginScreen").style.display = "none";
+    document.getElementById("logoutBtn").style.display = "inline-block";
+}
+
+</script>
+</body>
+</html>
