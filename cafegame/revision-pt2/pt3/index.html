@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chimera Café</title>
+<style>
+/* ================= BODY / THEME ================= */
+body {
+    margin:0;
+    font-family:'Georgia','serif';
+    background: linear-gradient(to bottom, #1b0b2f, #3d1f5e);
+    color:#eee;
+    overflow-x:hidden;
+}
+
+/* ================= GRID TILES ================= */
+#tilesGrid {
+    display:grid;
+    grid-template-columns:repeat(6,1fr);
+    grid-gap:2px;
+    width:100vw;
+    height:100vh;
+}
+.tile {
+    position:relative;
+    background:#222;
+    overflow:hidden;
+    cursor:pointer;
+    transition:all 0.3s ease;
+}
+.tile img {
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    filter:blur(1px);
+    transition:filter 0.3s ease, transform 0.5s ease, opacity 1s ease;
+}
+.tile:hover img { 
+    filter:blur(0);
+    transform:scale(1.02);
+}
+
+/* subtle ghost sway */
+@keyframes sway {
+    0% {transform: translateY(0px);}
+    50% {transform: translateY(2px);}
+    100% {transform: translateY(0px);}
+}
+.tile.ghost { animation:sway 8s ease-in-out infinite; opacity:0.95; }
+
+/* ================= POPUPS / CHAT / MUSIC ================= */
+.popupBG, .chatBox, #musicRoom, #cafeMenu, #enlightenmentRealm {
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.85);
+    z-index:1000;
+    justify-content:center;
+    align-items:center;
+    overflow:auto;
+}
+.popupWindow, .chatContent, #musicRoomBox, #cafeMenuBox, #enlightenmentBox {
+    background:rgba(30,0,60,0.95);
+    padding:20px;
+    border-radius:10px;
+    color:#eee;
+    max-width:500px;
+    width:90%;
+}
+button { margin:5px; padding:8px 12px; border:none; border-radius:4px; cursor:pointer; }
+
+/* ================= INVENTORY / UMBRELLA ================= */
+#inventoryDrawer {
+    position:fixed;
+    right:-360px;
+    top:0;
+    width:360px;
+    height:100%;
+    background:linear-gradient(to bottom, #220a33, #3d1f5e);
+    color:#fff;
+    transition:right 0.5s ease;
+    padding:10px;
+    z-index:1200;
+    overflow:auto;
+}
+#umbrellaRune {
+    position:fixed;
+    top:10px;
+    right:370px;
+    width:50px;
+    height:50px;
+    background-size:cover;
+    cursor:pointer;
+    transition:all 0.3s ease, box-shadow 0.5s ease;
+    z-index:1300;
+}
+#umbrellaRune:hover { box-shadow:0 0 20px rgba(255,255,255,0.5); }
+.umbrellaOpen { transform:rotate(180deg); }
+
+/* inventory items */
+.invItem { border-bottom:1px solid #444; margin:5px 0; padding:3px; }
+
+/* login */
+#loginScreen { display:flex; position:fixed; inset:0; justify-content:center; align-items:center; background:rgba(0,0,0,0.9); flex-direction:column; z-index:2000; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+    <h1>Chimera Café</h1>
+    <input type="text" id="usernameInput" placeholder="Enter Gamer Name">
+    <button onclick="loginUser()">Login</button>
+</div>
+<button id="logoutBtn" onclick="logoutUser()" style="display:none;position:fixed;top:10px;left:10px;">Logout</button>
+
+<!-- INVENTORY -->
+<div id="inventoryDrawer">
+    <h3>Your Drawer</h3>
+    <div id="inventoryContent"></div>
+</div>
+<div id="umbrellaRune" onclick="toggleInventory()"></div>
+
+<!-- TILES GRID -->
+<div id="tilesGrid">
+    ${Array.from({length:36}).map((_,i)=>`<div class="tile" data-id="${i+1}" onclick="tileAction(${i+1})"></div>`).join('')}
+</div>
+
+<!-- POPUPS -->
+<div class="popupBG" id="popupWrapper"><div class="popupWindow" id="popupWindow"></div></div>
+
+<!-- CHATBOXES -->
+<div class="chatBox" id="starChat"><div class="chatContent" id="starChatBox"></div></div>
+<div class="chatBox" id="hansChat"><div class="chatContent" id="hansChatBox"></div></div>
+<div class="chatBox" id="miloChat"><div class="chatContent" id="miloChatBox"></div></div>
+<div class="chatBox" id="mikiChat"><div class="chatContent" id="mikiChatBox"></div></div>
+<div class="chatBox" id="chariChat"><div class="chatContent" id="chariChatBox"></div></div>
+
+<!-- MUSIC ROOM -->
+<div class="popupBG" id="musicRoom"><div id="musicRoomBox"></div></div>
+
+<!-- CAFE MENU -->
+<div class="popupBG" id="cafeMenu"><div id="cafeMenuBox"></div></div>
+
+<!-- ENLIGHTENMENT -->
+<div class="popupBG" id="enlightenmentRealm"><div id="enlightenmentBox"></div></div>
+
+<script>
+/* ======================================================
+    BASE64 ASSETS PLACEHOLDERS
+====================================================== */
+const umbrellaClosed = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA..."; 
+const umbrellaOpen = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA...";
+const velvetBG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA...";
+const starImg = velvetBG; // Replace with actual base64 images
+const hansImg = velvetBG;
+const miloImg = velvetBG;
+const mikiImg = velvetBG;
+const chariImg = velvetBG;
+
+/* Audio chime */
+const windChimeBase64 = "data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU2LjI0LjEwMAAAAAAAAAC...";
+let windChime = new Audio(windChimeBase64);
+windChime.volume = 0.4;
+
+/* ======================================================
+    GAME STATE
+====================================================== */
+let gameState = {
+    loggedIn: false,
+    username: "",
+    mute:false,
+    progress:{
+        metStar:false,
+        metHans:false,
+        metMilo:false,
+        solvedMiki:false,
+        metChari:false,
+        unlockedMusic:false,
+        unlockedEnlightenment:false,
+        inventory:[],
+        codex:[]
+    }
+};
+function saveGame(){ localStorage.setItem("chimeraCafeSave", JSON.stringify(gameState)); }
+function loadGame(){ let data = localStorage.getItem("chimeraCafeSave"); if(data){ try{gameState = JSON.parse(data);}catch(e){} } }
+loadGame();
+
+/* ======================================================
+    LOGIN / LOGOUT
+====================================================== */
+function loginUser(){
+    let name = document.getElementById("usernameInput").value.trim();
+    if(!name) return;
+    gameState.loggedIn = true;
+    gameState.username = name;
+    saveGame();
+    document.getElementById("loginScreen").style.display="none";
+    document.getElementById("logoutBtn").style.display="inline-block";
+}
+function logoutUser(){ localStorage.removeItem("chimeraCafeSave"); location.reload(); }
+
+/* ======================================================
+    INVENTORY / UMBRELLA
+====================================================== */
+let runeEl = document.getElementById("umbrellaRune");
+runeEl.style.backgroundImage = `url(${umbrellaClosed})`;
+function toggleInventory(){
+    let drawer = document.getElementById("inventoryDrawer");
+    playChime();
+    if(drawer.style.right==="0px"){ drawer.style.right="-360px"; runeEl.style.backgroundImage = `url(${umbrellaClosed})`; }
+    else{ drawer.style.right="0px"; runeEl.style.backgroundImage = `url(${umbrellaOpen})`; refreshInventory(); }
+}
+function addItem(name,desc){ gameState.progress.inventory.push({name,desc}); saveGame(); refreshInventory(); }
+function refreshInventory(){ let cont = document.getElementById("inventoryContent"); cont.innerHTML=""; gameState.progress.inventory.forEach(it=>{cont.innerHTML+=`<div class="invItem"><b>${it.name}</b><br>${it.desc}</div>`;}); }
+function playChime(){ if(!gameState.mute){ windChime.currentTime=0; windChime.play(); } }
+
+/* ======================================================
+    TILES / THUMBNAILS
+====================================================== */
+const thumbnails = {star: starImg, hans:hansImg, milo:miloImg, miki:mikiImg, chari:chariImg, cafe: velvetBG};
+function assignThumbnails(){
+    let tiles = document.querySelectorAll(".tile");
+    tiles.forEach((t,i)=>{
+        let id = i+1;
+        let html=`<img src="${velvetBG}">`;
+        if([2,4,5,11,16,21,28].includes(id)) t.classList.add("ghost");
+        if(id===1) html=`<img src="${thumbnails.star}">`;
+        if(id===3) html=`<img src="${thumbnails.hans}">`;
+        if(id===7) html=`<img src="${thumbnails.milo}">`;
+        if(id===9) html=`<img src="${thumbnails.miki}">`;
+        if(id===12) html=`<img src="${thumbnails.chari}">`;
+        t.innerHTML = html;
+    });
+}
+assignThumbnails();
+function tileAction(id){
+    playChime();
+    switch(id){
+        case 1: openStarChat(); break;
+        case 3: openHansChat(); break;
+        case 7: openMiloChat(); break;
+        case 9: openMikiChat(); break;
+        case 12: openChariChat(); break;
+        default: openPopup("Tile","<p>This square whispers secrets, but not yet...</p>");
+    }
+}
+
+/* ======================================================
+    POPUP
+====================================================== */
+function openPopup(title,html){ let wrap=document.getElementById("popupWrapper"); let win=document.getElementById("popupWindow"); win.innerHTML=`<h2>${title}</h2>${html}<br><button onclick="closePopup()">Close</button>`; wrap.style.display="flex"; }
+function closePopup(){ document.getElementById("popupWrapper").style.display="none"; }
+
+/* ======================================================
+    CHARACTER DIALOGUES / QUIZZES / RIDDLES
+    (Full logic for Hans, Star, Milo, Miki, Chari)
+====================================================== */
+
+/* Hans, Star, Milo, Miki, Chari scripts here */
+[PASTE THE FULL CHAT/RIDDLE SCRIPT FROM PREVIOUS MESSAGE HERE]
+</script>
+</body>
+</html>
