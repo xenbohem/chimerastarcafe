@@ -274,17 +274,38 @@ function assignThumbnails(){
         t.innerHTML = html;
     });
 }
-assignThumbnails();
-function tileAction(id){
-    playChime();
-    switch(id){
-        case 1: openStarChat(); break;
-        case 3: openHansChat(); break;
-        case 7: openMiloChat(); break;
-        case 9: openMikiChat(); break;
-        case 12: openChariChat(); break;
-        default: openPopup("Tile","<p>This square whispers secrets, but not yet...</p>");
+document.addEventListener("DOMContentLoaded", function() {
+    const tilesGrid = document.getElementById("tilesGrid");
+
+    // Clear grid first
+    tilesGrid.innerHTML = "";
+
+    // Generate 36 tiles
+    for (let i = 1; i <= 36; i++) {
+        const tile = document.createElement("div");
+        tile.className = "tile";
+
+        // optional ghost effect for some tiles
+        if ([2,4,5,11,16,21,28].includes(i)) tile.classList.add("ghost");
+
+        // Assign thumbnail placeholders
+        let imgSrc = velvetBG; // default
+        if(i===1) imgSrc = starImg;
+        if(i===3) imgSrc = hansImg;
+        if(i===7) imgSrc = miloImg;
+        if(i===9) imgSrc = mikiImg;
+        if(i===12) imgSrc = chariImg;
+
+        tile.innerHTML = `<img src="${imgSrc}">`;
+        tile.dataset.id = i;
+
+        // click handler
+        tile.addEventListener("click", () => tileAction(i));
+
+        tilesGrid.appendChild(tile);
     }
+});
+
 }
 
 /* ======================================================
