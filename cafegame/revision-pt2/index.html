@@ -155,156 +155,152 @@ button { margin:5px; padding:8px 12px; border:none; border-radius:4px; cursor:po
 <!-- ENLIGHTENMENT -->
 <div class="popupBG" id="enlightenmentRealm"><div id="enlightenmentBox"></div></div>
 
-<script>
-/* ======================================================
-    BASE64 ASSETS
-====================================================== */
-const umbrellaClosed = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA...";
-const umbrellaOpen = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA...";
-const velvetBG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA...";
-const starImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA...";
-const hansImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA...";
-const miloImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA...";
-const mikiImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA...";
-const chariImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA...";
-const lavenderSprigIcon = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA...";
-const matchaLeafIcon = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA...";
-const nightfallDustIcon = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA...";
-const windChimeBase64 = "data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU2LjI0LjEwMAAAAAAAAAC...";
-let windChime = new Audio(windChimeBase64);
-windChime.volume = 0.4;
 
+   <script>
 /* ======================================================
-    GAME STATE
+    CHARACTER DIALOGUES / QUIZZES / RIDDLES
 ====================================================== */
-let gameState = {
-    loggedIn: false,
-    username: "",
-    mute:false,
-    volume:0.4,
-    progress:{
-        metStar:false,
-        metHans:false,
-        metMilo:false,
-        solvedMiki:false,
-        metChari:false,
-        unlockedMusic:false,
-        unlockedEnlightenment:false,
-        inventory:[],
-        codex:[]
+
+/* -----------------------------
+    HANS CHAT - TEA SNOB
+----------------------------- */
+function openHansChat(){
+    const hansBox = document.getElementById("hansChatBox");
+    hansBox.innerHTML = `
+        <p>Hans: Well well well look what the chimera-cat dragged in.</p>
+        <p>Hans: Are you here to appreciate true tea or just sniff around like a common tabby?</p>
+        <button onclick="hansResponse('yes')">Yes, I love tea.</button>
+        <button onclick="hansResponse('no')">No, just exploring.</button>
+    `;
+    document.getElementById("hansChat").style.display="flex";
+}
+
+function hansResponse(answer){
+    const hansBox = document.getElementById("hansChatBox");
+    if(answer==='yes'){
+        hansBox.innerHTML = `
+            <p>Hans: Ah, a kindred spirit! Finally, someone with taste.</p>
+            <p>Hans: Tell me, do you prefer Earl Grey or English Breakfast?</p>
+            <button onclick="hansResponse2('Earl Grey')">Earl Grey</button>
+            <button onclick="hansResponse2('English Breakfast')">English Breakfast</button>
+        `;
+    } else {
+        hansBox.innerHTML = `
+            <p>Hans: Tsk, sniffing around? Well, you might still learn a thing or two.</p>
+            <button onclick="closeHansChat()">Continue</button>
+        `;
     }
-};
+}
 
-/* ======================================================
-    SAVE / LOAD
-====================================================== */
-function saveGame(){ localStorage.setItem("chimeraCafeSave", JSON.stringify(gameState)); }
-function loadGame(){ let data = localStorage.getItem("chimeraCafeSave"); if(data){ try{gameState = JSON.parse(data);}catch(e){} } }
-loadGame();
-
-/* ======================================================
-    LOGIN / LOGOUT
-====================================================== */
-function loginUser(){
-    let name = document.getElementById("usernameInput").value.trim();
-    if(!name) return;
-    gameState.loggedIn = true;
-    gameState.username = name;
+function hansResponse2(choice){
+    const hansBox = document.getElementById("hansChatBox");
+    hansBox.innerHTML = `
+        <p>Hans: ${choice}? Bold choice. Your tea journey begins!</p>
+        <p>Hint: Keep an eye out for hidden tea leaves in other tiles...</p>
+        <button onclick="closeHansChat()">Close</button>
+    `;
+    if(!gameState.progress.codex.includes("Hans")) gameState.progress.codex.push("Hans");
     saveGame();
-    document.getElementById("loginScreen").style.display="none";
-    document.getElementById("logoutBtn").style.display="inline-block";
 }
-function logoutUser(){ localStorage.removeItem("chimeraCafeSave"); location.reload(); }
 
-/* ======================================================
-    SOUND / CHIME
-====================================================== */
-function playChime(){ if(!gameState.mute){ windChime.currentTime=0; windChime.play(); } }
-function toggleMute(){ gameState.mute = !gameState.mute; saveGame(); }
-
-/* ======================================================
-    INVENTORY / UMBRELLA
-====================================================== */
-let runeEl = document.getElementById("umbrellaRune");
-runeEl.style.backgroundImage = `url(${umbrellaClosed})`;
-function toggleInventory(){
-    let drawer = document.getElementById("inventoryDrawer");
-    playChime();
-    if(drawer.style.right==="0px"){ drawer.style.right="-360px"; runeEl.style.backgroundImage = `url(${umbrellaClosed})`; }
-    else{ drawer.style.right="0px"; runeEl.style.backgroundImage = `url(${umbrellaOpen})`; refreshInventory(); }
+function closeHansChat(){
+    document.getElementById("hansChat").style.display="none";
 }
-function addItem(name,desc){ gameState.progress.inventory.push({name,desc}); saveGame(); refreshInventory(); }
-function refreshInventory(){ let cont = document.getElementById("inventoryContent"); cont.innerHTML=""; gameState.progress.inventory.forEach(it=>{cont.innerHTML+=`<div class="invItem"><b>${it.name}</b><br>${it.desc}</div>`;}); }
 
-/* ======================================================
-    THUMBNAILS / TILES
-====================================================== */
-const thumbnails = {
-    star: starImg, hans:hansImg, milo:miloImg, miki:mikiImg, chari:chariImg,
-    cafe: velvetBG, cafeInterior: velvetBG, loreHall: velvetBG, musicDoor: velvetBG,
-    clue1: velvetBG, clue2: velvetBG, clue3: velvetBG, clue4: velvetBG
-};
-function assignThumbnails(){
-    let tiles = document.querySelectorAll(".tile");
-    tiles.forEach((t,i)=>{
-        let id = i+1;
-        let html=`<img src="${velvetBG}">`;
-        // subtle ghost effect on some tiles
-        if([2,4,5,11,16,21,28].includes(id)) t.classList.add("ghost");
-        // assign special images
-        if(id===1) html=`<img src="${thumbnails.star}">`;
-        if(id===3) html=`<img src="${thumbnails.hans}">`;
-        if(id===7) html=`<img src="${thumbnails.milo}">`;
-        if(id===9) html=`<img src="${thumbnails.miki}">`;
-        if(id===12) html=`<img src="${thumbnails.chari}">`;
-        if(id===18) html=`<img src="${thumbnails.cafe}">`;
-        if(id===19) html=`<img src="${thumbnails.cafeInterior}">`;
-        if(id===6) html=`<img src="${thumbnails.musicDoor}">`;
-        if([22,23,24,25].includes(id)) html=`<img src="${thumbnails.clue1}">`;
-        t.innerHTML = html;
-    });
+/* -----------------------------
+    STAR CHAT - OWNER
+----------------------------- */
+function openStarChat(){
+    const starBox = document.getElementById("starChatBox");
+    starBox.innerHTML = `
+        <p>Star: Welcome to the Chimera Café! I’m Star, your gothic guide and romance-reading barista.</p>
+        <p>When not running this café, I enjoy Bible study and long dark novels...</p>
+        <p>All my chimera siblings (Hans, Milo, Miki, Chari) and I were rescued by Yeshua and started a new life here.</p>
+        <button onclick="starFollowup()">Tell me more about the café</button>
+        <button onclick="closeStarChat()">Leave</button>
+    `;
+    document.getElementById("starChat").style.display="flex";
 }
-assignThumbnails();
 
-/* ======================================================
-    TILE ACTION ROUTER
-====================================================== */
-function tileAction(id){
-    playChime();
-    switch(id){
-        case 1: openStarChat(); break;
-        case 3: openHansChat(); break;
-        case 7: openMiloChat(); break;
-        case 9: openMikiChat(); break;
-        case 12: openChariChat(); break;
-        case 18: openCafeMenu(); break;
-        case 19: openCafeMenu(); break;
-        case 6: tryMusicRoom(); break;
-        case 22: case 23: case 24: case 25: openPopup("Clue","<p>The air hums... someone is watching. Look for the tea snob.</p>"); break;
-        default: openPopup("Tile","<p>This square whispers secrets, but not yet...</p>");
+function starFollowup(){
+    const starBox = document.getElementById("starChatBox");
+    starBox.innerHTML = `
+        <p>Star: This café is a haven. Each tile you click has secrets, riddles, or portals.</p>
+        <p>Tip: Pay attention to the subtle cerulean hints. They may guide you to hidden codex entries or music tracks.</p>
+        <button onclick="closeStarChat()">Thanks, Star!</button>
+    `;
+    if(!gameState.progress.codex.includes("Star")) gameState.progress.codex.push("Star");
+    saveGame();
+}
+
+function closeStarChat(){
+    document.getElementById("starChat").style.display="none";
+}
+
+/* -----------------------------
+    MILO CHAT - ZEN-CHRISTIAN-TAOIST QUIZZES
+----------------------------- */
+function openMiloChat(){
+    const miloBox = document.getElementById("miloChatBox");
+    miloBox.innerHTML = `
+        <p>Milo: Greetings. I cultivate both herbs and wisdom.</p>
+        <p>Answer my question to step closer to enlightenment:</p>
+        <p>Which book in the Bible teaches about salvation through faith in Yeshua?</p>
+        <button onclick="miloAnswer('Romans')">Romans</button>
+        <button onclick="miloAnswer('Genesis')">Genesis</button>
+        <button onclick="miloAnswer('Psalms')">Psalms</button>
+    `;
+    document.getElementById("miloChat").style.display="flex";
+}
+
+function miloAnswer(ans){
+    const miloBox = document.getElementById("miloChatBox");
+    if(ans==='Romans'){
+        miloBox.innerHTML = `
+            <p>Milo: Correct. Through faith, one finds salvation and peace.</p>
+            <p>Your enlightenment portal is now unlocked!</p>
+            <button onclick="openEnlightenment()">Enter Enlightenment Realm</button>
+        `;
+        gameState.progress.unlockedEnlightenment = true;
+        saveGame();
+    } else {
+        miloBox.innerHTML = `
+            <p>Milo: Not quite. Seek the book that speaks directly of salvation through faith.</p>
+            <button onclick="closeMiloChat()">Try Again Later</button>
+        `;
     }
 }
 
-/* ======================================================
-    POPUP
-====================================================== */
-function openPopup(title,html){ let wrap=document.getElementById("popupWrapper"); let win=document.getElementById("popupWindow"); win.innerHTML=`<h2>${title}</h2>${html}<br><button onclick="closePopup()">Close</button>`; wrap.style.display="flex"; }
-function closePopup(){ document.getElementById("popupWrapper").style.display="none"; }
+function closeMiloChat(){
+    document.getElementById("miloChat").style.display="none";
+}
 
-/* ======================================================
-    CHATBOXES / MUSIC / ENLIGHTENMENT LOGIC
-    - include Part3 chat systems here (Hans, Star, Milo, Miki, Chari)
-    - riddles, music tracks, enlightenment realm, cafe menu, etc.
-====================================================== */
+function openEnlightenment(){
+    document.getElementById("enlightenmentRealm").style.display="flex";
+    document.getElementById("enlightenmentBox").innerHTML = `
+        <h2>Enlightenment Realm</h2>
+        <p>You have learned about salvation and the path of Yeshua’s guidance.</p>
+        <p>Remember: Romans 10:9-10 - “If you declare with your mouth, 'Jesus is Lord,' and believe in your heart that God raised him from the dead, you will be saved.”</p>
+        <button onclick="document.getElementById('enlightenmentRealm').style.display='none'">Return</button>
+    `;
+}
 
-/* Placeholder functions so file is runnable */
-function openStarChat(){ openPopup("Star","<p>Star: Welcome to the Chimera Café! Dark coffee, romance novels, and sacred secrets await...</p><button onclick='closePopup()'>Close</button>"); }
-function openHansChat(){ openPopup("Hans","<p>Hans: Well well well look what the chimera-cat dragged in.</p><button onclick='closePopup()'>Close</button>"); }
-function openMiloChat(){ openPopup("Milo","<p>Milo: Follow the path of serenity and Yeshua’s wisdom...</p><button onclick='closePopup()'>Close</button>"); }
-function openMikiChat(){ openPopup("Miki","<p>Miki: Solve the riddle to unlock my music tracks...</p><button onclick='closePopup()'>Close</button>"); }
-function openChariChat(){ openPopup("Chari","<p>Chari: ...softly, quietly...</p><button onclick='closePopup()'>Close</button>"); }
-function openCafeMenu(){ openPopup("Cafe Menu","<p>Menu: Dark Roast, Moonlight Tea, Starry Cake...</p><button onclick='closePopup()'>Close</button>"); }
-function tryMusicRoom(){ openPopup("Music Room","<p>Only those who solved Miki’s riddle may enter.</p><button onclick='closePopup()'>Close</button>"); }
+/* -----------------------------
+    MIKI CHAT - RIDDLE / MUSIC
+----------------------------- */
+const mikiRiddleAnswer = "chimera";
+
+function openMikiChat(){
+    const mikiBox = document.getElementById("mikiChatBox");
+    mikiBox.innerHTML = `
+        <p>Miki: Rock on! I have hidden music tracks.</p>
+        <p>Solve this riddle to unlock them:</p>
+        <p>"Born of many forms, yet one in soul, who am I?"</p>
+        <input type="text" id="mikiRiddleInput" placeholder="Answer here">
+        <button onclick="checkMikiRiddle()">Submit</button>
+    `;
+    document.getElementById("mikiChat").style.display="fl
+
 </script>
 </body>
 </html>
