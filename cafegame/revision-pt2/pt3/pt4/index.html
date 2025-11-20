@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Chimera Café — Clean Build</title>
+<style>
+/* ================= BODY / THEME ================= */
+:root{
+  --drawer-width:360px;
+  --tile-gap:2px;
+}
+body {
+    margin:0;
+    font-family:'Georgia','serif';
+    background: linear-gradient(to bottom, #1b0b2f, #3d1f5e);
+    color:#eee;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+}
+
+/* ================= GRID TILES ================= */
+#tilesGrid {
+    display:grid;
+    grid-template-columns:repeat(6,1fr);
+    grid-gap:var(--tile-gap);
+    width:100vw;
+    height:100vh;
+}
+.tile {
+    position:relative;
+    background:#222;
+    overflow:hidden;
+    cursor:pointer;
+    transition:all 0.28s ease;
+    user-select:none;
+}
+.tile img {
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    filter:blur(1px);
+    transition:filter 0.3s ease, transform 0.5s ease, opacity 0.5s ease;
+}
+.tile:hover img {
+    filter:blur(0);
+    transform:scale(1.02);
+}
+
+/* subtle ghost sway */
+@keyframes sway {
+    0% {transform: translateY(0px);}
+    50% {transform: translateY(2px);}
+    100% {transform: translateY(0px);}
+}
+.tile.ghost { animation:sway 8s ease-in-out infinite; opacity:0.95; }
+
+/* ================= POPUPS / CHAT / MUSIC ================= */
+.popupBG, .chatBox, #musicRoom, #cafeMenu, #enlightenmentRealm {
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.85);
+    z-index:1000;
+    justify-content:center;
+    align-items:center;
+    overflow:auto;
+}
+.popupWindow, .chatContent, #musicRoomBox, #cafeMenuBox, #enlightenmentBox {
+    background:rgba(30,0,60,0.95);
+    padding:18px;
+    border-radius:10px;
+    color:#eee;
+    max-width:560px;
+    width:92%;
+    box-shadow:0 10px 30px rgba(0,0,0,0.6);
+}
+button { margin:5px; padding:8px 12px; border:none; border-radius:6px; cursor:pointer; background:#6a2a8b; color:#fff; }
+
+/* ================= INVENTORY / UMBRELLA ================= */
+#inventoryDrawer {
+    position:fixed;
+    right:calc(-1 * var(--drawer-width));
+    top:0;
+    width:var(--drawer-width);
+    height:100%;
+    background:linear-gradient(to bottom, #220a33, #3d1f5e);
+    color:#fff;
+    transition:right 0.45s cubic-bezier(.22,.9,.2,1);
+    padding:14px;
+    z-index:1200;
+    overflow:auto;
+}
+#umbrellaRune {
+    position:fixed;
+    top:10px;
+    right:calc(var(--drawer-width) + 10px);
+    width:54px;
+    height:54px;
+    background-size:cover;
+    background-position:center;
+    cursor:pointer;
+    transition:all 0.25s ease, box-shadow 0.35s ease;
+    z-index:1300;
+    border-radius:8px;
+    box-shadow:0 6px 18px rgba(0,0,0,0.4);
+}
+#umbrellaRune:hover { box-shadow:0 10px 26px rgba(0,0,0,0.6); transform:translateY(-2px); }
+.umbrellaOpen { transform: rotate(180deg); }
+
+/* inventory items */
+.invItem { border-bottom:1px solid #444; margin:8px 0; padding:6px; }
+
+/* login */
+#loginScreen {
+    display:flex;
+    position:fixed;
+    inset:0;
+    justify-content:center;
+    align-items:center;
+    background:rgba(0,0,0,0.9);
+    flex-direction:column;
+    z-index:2000;
+    gap:12px;
+}
+#loginScreen input {
+    padding:10px 12px;
+    border-radius:6px;
+    border:1px solid #333;
+    width:240px;
+    background:#120516;
+    color:#fff;
+}
+
+/* small helpers */
+.top-left-fixed { position:fixed; left:12px; top:12px; z-index:2100; }
+.hidden { display:none !important; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen" aria-hidden="false">
+    <h1 style="margin:0 0 6px 0">Chimera Café</h1>
+    <input type="text" id="usernameInput" placeholder="Enter Gamer Name" />
+    <div>
+      <button id="loginBtn">Login</button>
+      <button id="guestBtn">Play as Guest</button>
+    </div>
+</div>
+<button id="logoutBtn" onclick="logoutUser()" class="top-left-fixed hidden">Logout</button>
+
+<!-- INVENTORY -->
+<div id="inventoryDrawer" aria-hidden="true">
+    <h3 style="margin-top:0">Your Drawer</h3>
+    <div id="inventoryContent"></div>
+    <div style="margin-top:12px">
+      <button onclick="addItem('Mystery Tea','A steaming cup found under the counter')">Add Demo Item</button>
+      <button onclick="clearInventory()">Clear</button>
+    </div>
+</div>
+<div id="umbrellaRune" title="Open Drawer"></div>
+
+<!-- TILES GRID -->
+<div id="tilesGrid" aria-label="tiles grid"></div>
+
+<!-- POPUPS -->
+<div class="popupBG" id="popupWrapper" role="dialog" aria-hidden="true">
+  <div class="popupWindow" id="popupWindow"></div>
+</div>
+
+<!-- CHATBOXES (placeholders for future extension) -->
+<div class="chatBox" id="starChat"><div class="chatContent" id="starChatBox"></div></div>
+
+<!-- MUSIC / MENU / ENLIGHTENMENT -->
+<div class="popupBG" id="musicRoom"><div id="musicRoomBox"></div></div>
+<div class="popupBG" id="cafeMenu"><div id="cafeMenuBox"></div></div>
+<div class="popupBG" id="enlightenmentRealm"><div id="enlightenmentBox"></div></div>
+
+<script>
+/* ======================================================
+  Minimal base64 placeholder assets (small SVG data URIs)
+  Replace these with your real base64 images later.
+====================================================== */
+const velvetBG = "data:image/svg+xml;utf8," + encodeURIComponent(
+  `<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><rect width='100%' height='100%' fill='#2b1238'/></svg>`
+);
+
+const umbrellaClosed = "data:image/svg+xml;utf8," + encodeURIComponent(
+  `<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect rx='8' ry='8' width='64' height='36' y='14' fill='#6a2a8b'/><circle cx='48' cy='20' r='6' fill='#fff' opacity='0.12'/></svg>`
+);
+const umbrellaOpen = "data:image/svg+xml;utf8," + encodeURIComponent(
+  `<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><path d='M2 30 C22 6, 42 6, 62 30 L2 30 Z' fill='#7b3aa0'/><rect x='30' y='30' width='4' height='28' fill='#4a2a6b'/></svg>`
+);
+
+/* small audio stub (silent) - browsers may block autoplay */
+const windChime = new Audio();
+try { windChime.src = ""; windChime.volume = 0.45; } catch(e){}
+
+/* ======================================================
+    GAME STATE (save/load)
+====================================================== */
+let gameState = {
+    loggedIn:false,
+    username:"",
+    mute:false,
+    progress:{
+        inventory:[],
+        codex:[]
+    }
+};
+function saveGame(){ try{ localStorage.setItem("chimeraCafeSave", JSON.stringify(gameState)); } catch(e){} }
+function loadGame(){ let data = localStorage.getItem("chimeraCafeSave"); if(data){ try{ gameState = JSON.parse(data); }catch(e){} } }
+loadGame();
+
+/* ======================================================
+    UI ELEMENTS - cache
+====================================================== */
+const loginScreen = document.getElementById("loginScreen");
+const usernameInput = document.getElementById("usernameInput");
+const loginBtn = document.getElementById("loginBtn");
+const guestBtn = document.getElementById("guestBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+const umbrellaRune = document.getElementById("umbrellaRune");
+const inventoryDrawer = document.getElementById("inventoryDrawer");
+const inventoryContent = document.getElementById("inventoryContent");
+const tilesGrid = document.getElementById("tilesGrid");
+const popupWrapper = document.getElementById("popupWrapper");
+const popupWindow = document.getElementById("popupWindow");
+
+/* ======================================================
+    INITIALIZE UI (runs once)
+====================================================== */
+function initUI(){
+  // umbrella icon
+  umbrellaRune.style.backgroundImage = `url("${umbrellaClosed}")`;
+  umbrellaRune.style.display = "none"; // default hidden until login
+
+  // wire buttons
+  loginBtn.addEventListener("click", loginUser);
+  guestBtn.addEventListener("click", ()=>{ usernameInput.value = "Guest"; loginUser(); });
+  logoutBtn.addEventListener("click", logoutUser);
+  umbrellaRune.addEventListener("click", toggleInventory);
+  popupWrapper.addEventListener("click", (e)=>{ if(e.target === popupWrapper) closePopup(); });
+
+  // render tiles
+  renderTiles();
+
+  // set UI state from saved game
+  refreshAfterLoad();
+}
+
+/* ======================================================
+    RENDER / TILES
+====================================================== */
+const thumbnails = {
+  star: velvetBG,
+  hans: velvetBG,
+  milo: velvetBG,
+  miki: velvetBG,
+  chari: velvetBG
+};
+
+function renderTiles(){
+  tilesGrid.innerHTML = "";
+  for(let i=1;i<=36;i++){
+    const tile = document.createElement("div");
+    tile.className = "tile";
+    tile.dataset.id = String(i);
+    tile.style.minHeight = "8vh";
+    // ghost tiles
+    if([2,4,5,11,16,21,28].includes(i)) tile.classList.add("ghost");
+
+    // choose thumbnail
+    let imgSrc = velvetBG;
+    if(i===1) imgSrc = thumbnails.star;
+    if(i===3) imgSrc = thumbnails.hans;
+    if(i===7) imgSrc = thumbnails.milo;
+    if(i===9) imgSrc = thumbnails.miki;
+    if(i===12) imgSrc = thumbnails.chari;
+
+    tile.innerHTML = `<img alt="tile ${i}" src="${imgSrc}">`;
+    tile.addEventListener("click", ()=> tileAction(i));
+    tilesGrid.appendChild(tile);
+  }
+}
+
+/* placeholder tile action */
+function tileAction(id){
+  // small demo behavior depending on id
+  if(!gameState.loggedIn){
+    openPopup("Not logged in", "<p>Please log in to interact with tiles.</p>");
+    return;
+  }
+
+  if(id === 1){
+    openPopup("Star's Corner", `<p>You found Star's cozy corner — hello <b>${escapeHtml(gameState.username)}</b>!</p>`);
+    gameState.progress.codex.push({found:"star", at:id, when:Date.now()});
+    saveGame();
+    return;
+  }
+
+  // generic tile popup
+  openPopup(`Tile ${id}`, `<p>A mysterious tile. Try the umbrella for inventory.</p><p><small>Tile id: ${id}</small></p>`);
+}
+
+/* ======================================================
+    LOGIN / LOGOUT
+====================================================== */
+function loginUser(){
+  const name = (usernameInput.value || "").trim();
+  if(!name){
+    alert("Please enter your gamer name!");
+    return;
+  }
+  gameState.loggedIn = true;
+  gameState.username = name;
+  saveGame();
+  refreshAfterLoad();
+  personalizeChats();
+}
+function logoutUser(){
+  if(confirm("Are you sure you want to log out? Your progress will be saved.")){
+    saveGame();
+    // simple logout: clear state and reload
+    // keep progress if you want — currently we'll keep user as logged out but save progress
+    gameState.loggedIn = false;
+    // we intentionally keep saved progress; only username/loggedIn toggled out
+    saveGame();
+    location.reload();
+  }
+}
+
+function refreshAfterLoad(){
+  if(gameState.loggedIn){
+    loginScreen.style.display = "none";
+    logoutBtn.classList.remove("hidden");
+    umbrellaRune.style.display = "block";
+  } else {
+    loginScreen.style.display = "flex";
+    logoutBtn.classList.add("hidden");
+    umbrellaRune.style.display = "none";
+  }
+  // inventory drawer closed by default
+  inventoryDrawer.style.right = `calc(-1 * var(--drawer-width))`;
+  umbrellaRune.classList.remove("umbrellaOpen");
+  refreshInventory();
+}
+
+/* Optional: small welcome popup personalization */
+function personalizeChats(){
+  if(gameState.username){
+    const welcome = document.createElement("p");
+    welcome.innerHTML = `Welcome, <b>${escapeHtml(gameState.username)}</b>! Explore the Chimera Café tiles and secrets.`;
+    popupWindow.innerHTML = "";
+    popupWindow.appendChild(welcome);
+    popupWindow.innerHTML += `<br><button onclick="closePopup()">Close</button>`;
+    popupWrapper.style.display = "flex";
+    popupWrapper.setAttribute("aria-hidden","false");
+  }
+}
+
+/* ======================================================
+    INVENTORY / UMBRELLA
+====================================================== */
+function toggleInventory(){
+  playChime();
+  const right = inventoryDrawer.style.right || "";
+  if(right === "0px"){
+    // close
+    inventoryDrawer.style.right = `calc(-1 * var(--drawer-width))`;
+    umbrellaRune.style.backgroundImage = `url("${umbrellaClosed}")`;
+    umbrellaRune.classList.remove("umbrellaOpen");
+  } else {
+    // open
+    inventoryDrawer.style.right = "0px";
+    umbrellaRune.style.backgroundImage = `url("${umbrellaOpen}")`;
+    umbrellaRune.classList.add("umbrellaOpen");
+    refreshInventory();
+  }
+}
+function addItem(name,desc){
+  gameState.progress.inventory.push({name,desc,when:Date.now()});
+  saveGame();
+  refreshInventory();
+}
+function refreshInventory(){
+  inventoryContent.innerHTML = "";
+  if(!gameState.progress.inventory.length){
+    inventoryContent.innerHTML = `<div style="opacity:0.9">Your drawer is empty.</div>`;
+    return;
+  }
+  gameState.progress.inventory.forEach((it, idx)=>{
+    const el = document.createElement("div");
+    el.className = "invItem";
+    el.innerHTML = `<b>${escapeHtml(it.name)}</b><div style="font-size:0.9rem;opacity:0.9">${escapeHtml(it.desc)}</div>`;
+    inventoryContent.appendChild(el);
+  });
+}
+function clearInventory(){
+  if(!confirm("Clear inventory?")) return;
+  gameState.progress.inventory = [];
+  saveGame();
+  refreshInventory();
+}
+function playChime(){
+  if(gameState.mute) return;
+  try { windChime.currentTime = 0; windChime.play().catch(()=>{}); } catch(e){}
+}
+
+/* ======================================================
+    POPUP utilities
+====================================================== */
+function openPopup(title, html){
+  popupWindow.innerHTML = `<h2 style="margin-top:0">${escapeHtml(title)}</h2>${html}<br><div style="text-align:right"><button onclick="closePopup()">Close</button></div>`;
+  popupWrapper.style.display = "flex";
+  popupWrapper.setAttribute("aria-hidden","false");
+}
+function closePopup(){
+  popupWrapper.style.display = "none";
+  popupWrapper.setAttribute("aria-hidden","true");
+}
+
+/* ======================================================
+    HELPERS
+====================================================== */
+function escapeHtml(s){
+  if(!s) return "";
+  return String(s).replace(/[&<>"'`]/g, function(m){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;","`":"&#96;"}[m]; });
+}
+
+/* ======================================================
+    CHARACTER SCRIPTS (placeholder)
+    Paste or implement full character/chat logic here.
+====================================================== */
+function loadCharacterScripts(){
+  // Example placeholder: extend this area with your full chat/riddle logic.
+  // For now we keep it light so the page remains readable and safe.
+}
+
+/* ======================================================
+    START
+====================================================== */
+document.addEventListener("DOMContentLoaded", ()=>{
+  initUI();
+  loadCharacterScripts();
+});
+</script>
+</body>
+</html>
