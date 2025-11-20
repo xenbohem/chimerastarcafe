@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Comfort Café | Chimera Grid</title>
+<style>
+  body{
+    margin:0; padding:0;
+    background:#0c0c12;
+    font-family: "Poppins", sans-serif;
+    color:white;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    overflow:hidden;
+  }
+
+  /* LOGIN SCREEN */
+  #loginScreen{
+    position:absolute;
+    inset:0;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+    background:rgba(0,0,0,0.75);
+    backdrop-filter:blur(8px);
+    z-index:20;
+  }
+  #loginScreen input{
+    padding:12px;
+    border-radius:8px;
+    border:none;
+    margin:8px;
+  }
+  #loginScreen button{
+    padding:10px 20px;
+    border:none;
+    border-radius:6px;
+    background:#7a4bff;
+    color:white;
+    cursor:pointer;
+  }
+
+  /* GRID */
+  #grid{
+    display:grid;
+    grid-template-columns:repeat(6, 1fr);
+    grid-template-rows:repeat(6, 1fr);
+    gap:6px;
+    width:80vmin;
+    height:80vmin;
+    position:relative;
+  }
+
+  .tile{
+    background:#1b1b25;
+    border-radius:10px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    cursor:pointer;
+    transition:transform 0.3s ease, background 0.4s;
+    position:relative;
+    overflow:hidden;
+  }
+  .tile:hover{
+    transform:scale(1.04);
+    background:#252532;
+  }
+
+  .placeholder{
+    width:80%; height:80%;
+    background:#333;
+    border-radius:8px;
+    opacity:0.6;
+  }
+
+  /* POPUP */
+  #popup{
+    position:absolute;
+    top:50%; left:50%;
+    transform:translate(-50%,-50%) scale(0.7);
+    opacity:0;
+    background:#111;
+    width:70vmin;
+    padding:20px;
+    border-radius:20px;
+    box-shadow:0 0 40px rgba(255,255,255,0.1);
+    z-index:50;
+    transition:0.4s ease;
+    pointer-events:none;
+  }
+  #popup.active{
+    opacity:1;
+    transform:translate(-50%,-50%) scale(1);
+    pointer-events:auto;
+  }
+  #popup img{
+    width:120px; height:120px;
+    border-radius:12px;
+    background:#444;
+    margin-bottom:10px;
+  }
+  #popup button{
+    margin-top:10px;
+    padding:8px 16px;
+    background:#7a4bff;
+    border:none;
+    border-radius:6px;
+    color:white;
+    cursor:pointer;
+  }
+
+  audio{ display:none; }
+
+  /* VIDEO CONTAINER */
+  #videoContainer{
+    position:absolute;
+    top:0; left:0;
+    width:100%; height:100%;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    pointer-events:none;
+    opacity:0;
+    transition:opacity 1s ease;
+  }
+  #videoContainer.fade-in{ opacity:1; pointer-events:auto; }
+  #videoContainer video{
+    max-width:80%; max-height:80%; border-radius:12px;
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <h2>Enter the Café</h2>
+  <input id="userInput" placeholder="Username" />
+  <button id="loginBtn">Enter</button>
+</div>
+
+<!-- GRID -->
+<div id="grid"></div>
+
+<!-- POPUP -->
+<div id="popup"></div>
+
+<!-- VIDEO -->
+<div id="videoContainer">
+  <video id="characterVideo" src="character_intro.mp4" muted></video>
+</div>
+
+<!-- MUSIC FOR MIKI -->
+<audio id="mikiTrack" src="cafespiritpulse.mp3"></audio>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const grid = document.getElementById('grid');
+  const popup = document.getElementById('popup');
+  const loginScreen = document.getElementById('loginScreen');
+  const mikiTrack = document.getElementById('mikiTrack');
+  const video = document.getElementById('characterVideo');
+  const videoContainer = document.getElementById('videoContainer');
+
+  const characters = {
+    star:{name:"Star",img:"placeholder_star.png",text:`I’m Star — born in mythic Mini-Paris. Yeshua saved us after the lab escape. Now I run this Café for wanderers like you.`,quiz:"Why did Yeshua give me the Café?"},
+    hans:{name:"Hans",img:"placeholder_hans.png",text:`Former vampire — now a connoisseur of actual *life* and better tea. Romans says the gift of God is eternal life… which is far superior to undeath, I assure you.`,quiz:"What city are we really from, dear patron?"},
+    chari:{name:"Chari",img:"placeholder_chari.png",text:"I’m Chari… rat-cat hybrid. I still get scared. But Yeshua saved me. Milo helps me breathe again.",quiz:"Who rescued us from the lab?"},
+    milo:{name:"Milo",img:"placeholder_milo.png",text:"I tend the herb gardens of Mini-Paris. Taoism taught me flow; Yeshua taught me freedom.",quiz:"What role do I play in the Café’s peace?"},
+    miki:{name:"Miki",img:"placeholder_miki.png",text:"Yo, welcome! My frequencies are portals. Track auto-plays — vibe with it.",quiz:"Where did we escape from? (Hint: a lab)",music:true}
+  };
+
+  const portals = {hansPortal:"hans",yeshuaPortal:"yeshua",mikiPortal:"miki"};
+  const tileMap = [];
+
+  function createGrid(){
+    grid.innerHTML = "";
+    for(let i=0;i<36;i++){
+      const tile=document.createElement('div');
+      tile.className='tile';
+      tile.dataset.index=i;
+      if(i%2===0){
+        const keys=Object.keys(characters);
+        tile.dataset.type="character";
+        tile.dataset.char=keys[Math.floor(Math.random()*keys.length)];
+      } else tile.dataset.type="lore";
+      if(i===5)tile.dataset.portal="hansPortal";
+      if(i===13)tile.dataset.portal="yeshuaPortal";
+      if(i===27)tile.dataset.portal="mikiPortal";
+      const ph=document.createElement('div'); ph.className='placeholder'; tile.appendChild(ph);
+      tile.addEventListener('click',handleTileClick);
+      grid.appendChild(tile); tileMap.push(tile);
+    }
+  }
+
+  function handleTileClick(){
+    const portal=this.dataset.portal;
+    const type=this.dataset.type;
+    const who=this.dataset.char;
+    if(portal) return openPortal(portal);
+    if(type==='character') return openCharacter(who);
+    if(type==='lore') return openLore();
+  }
+
+  function openCharacter(id){
+    const c=characters[id]; if(!c) return;
+    popup.innerHTML=`<img src="${c.img}"/><h2>${c.name}</h2><p>${c.text}</p><p><em>${c.quiz}</em></p>${c.music?`<a href=\"cafespiritpulse.mp3\" download style=\"color:#7a4bff\">Download Track</a>`:''}<button id='closePopupBtn'>Close</button>`;
+    if(c.music){ mikiTrack.play(); videoContainer.classList.add('fade-in'); video.play(); }
+    else{ mikiTrack.pause(); mikiTrack.currentTime=0; }
+    popup.classList.add('active');
+    document.getElementById('closePopupBtn').onclick = closePopup;
+  }
+
+  function openLore(){
+    const randomLore=["Mini-Paris was built inside a dream dimension.","You hear faint violin music… someone remembers a past life.","The Café walls shift when truth is spoken.","A rat scurries by — Chari’s support companion.","You sense Yeshua’s gentle presence in the hush."];
+    const lore=randomLore[Math.floor(Math.random()*randomLore.length)];
+    popup.innerHTML=`<h2>Mystery Fragment</h2><p>${lore}</p><button id='closePopupBtn'>Close</button>`;
+    popup.classList.add('active');
+    document.getElementById('closePopupBtn').onclick = closePopup;
+  }
+
+  function openPortal(key){
+    if(key==='hansPortal') return openCharacter('hans');
+    if(key==='mikiPortal') return openCharacter('miki');
+    if(key==='yeshuaPortal') return openYeshua();
+  }
+
+  function openYeshua(){
+    popup.innerHTML=`<h2 style="color:#ffeaae;text-shadow:0 0 20px #fff6c8">Eternal Light</h2><p style="opacity:0.9;line-height:1.6">You step into a soft, ethereal glow. Yeshua's presence feels like warm dawn.<br><br>He whispers: <em>“I came to heal the brokenhearted… and give rest to the weary.”</em><br><br>Romans reminds you: <em>“Whoever calls on the name of the Lord shall be saved.”</em></p><button id='closePopupBtn'>Return</button>`;
+    popup.classList.add('active');
+    document.getElementById('closePopupBtn').onclick = closePopup;
+  }
+
+  function closePopup(){ popup.classList.remove('active'); }
+
+  document.getElementById('loginBtn').onclick=()=>{
+    loginScreen.style.opacity=0;
+    setTimeout(()=>{loginScreen.style.display='none'; createGrid();},400);
+  };
+
+  video.addEventListener('loadeddata',()=>{ videoContainer.classList.add('fade-in'); });
+  function attemptAutoplay(){
+    video.muted=true;
+    video.play().then(()=>setTimeout(()=>{video.muted=false;},400)).catch(()=>{
+      const btn=document.createElement('button'); btn.textContent='Tap to Begin';
+      videoContainer.appendChild(btn);
+      btn.addEventListener('click',()=>{video.muted=false; video.play(); btn.remove();});
+    });
+    video.loop=false;
+    video.addEventListener('ended',()=>{ video.pause(); video.currentTime=video.duration-0.05; });
+  }
+  attemptAutoplay();
+});
+</script>
+</body>
+</html>
