@@ -187,19 +187,59 @@ function saveGame(){ localStorage.setItem("chimeraCafeSave", JSON.stringify(game
 function loadGame(){ let data = localStorage.getItem("chimeraCafeSave"); if(data){ try{gameState = JSON.parse(data);}catch(e){} } }
 loadGame();
 
-/* ======================================================
-    LOGIN / LOGOUT
-====================================================== */
-function loginUser(){
-    let name = document.getElementById("usernameInput").value.trim();
-    if(!name) return;
+
+/* ================= LOGIN / LOGOUT FIX ================= */
+function loginUser() {
+    let nameInput = document.getElementById("usernameInput").value.trim();
+    if (!nameInput) {
+        alert("Please enter your gamer name!");
+        return;
+    }
     gameState.loggedIn = true;
-    gameState.username = name;
+    gameState.username = nameInput;
+
+    // Save game
     saveGame();
-    document.getElementById("loginScreen").style.display="none";
-    document.getElementById("logoutBtn").style.display="inline-block";
+
+    // Hide login, show logout and umbrella
+    document.getElementById("loginScreen").style.display = "none";
+    document.getElementById("logoutBtn").style.display = "inline-block";
+    document.getElementById("umbrellaRune").style.display = "block";
+
+    // Personalize chats (optional)
+    personalizeChats();
 }
-function logoutUser(){ localStorage.removeItem("chimeraCafeSave"); location.reload(); }
+
+function logoutUser() {
+    if (confirm("Are you sure you want to log out? Your progress will be saved.")) {
+        saveGame(); // optionally save before logout
+        location.reload();
+    }
+}
+
+// Show/hide umbrella based on login state
+window.onload = function() {
+    if (gameState.loggedIn) {
+        document.getElementById("loginScreen").style.display = "none";
+        document.getElementById("logoutBtn").style.display = "inline-block";
+        document.getElementById("umbrellaRune").style.display = "block";
+    } else {
+        document.getElementById("loginScreen").style.display = "flex";
+        document.getElementById("logoutBtn").style.display = "none";
+        document.getElementById("umbrellaRune").style.display = "none";
+    }
+}
+
+// Optional: use username in dialogues
+function personalizeChats() {
+    if(gameState.username){
+        const welcome = document.createElement("p");
+        welcome.innerHTML = `Welcome, <b>${gameState.username}</b>! Explore the Chimera Café tiles and secrets.`;
+        document.getElementById("popupWindow").appendChild(welcome);
+    }
+}
+</script>
+
 
 /* ======================================================
     INVENTORY / UMBRELLA
