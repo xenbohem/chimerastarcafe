@@ -1,0 +1,654 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Chimera Café — Mini-Paris (Single File, B-Plus)</title>
+<style>
+:root{
+  --bg:#0c0c12;
+  --panel:#12061a;
+  --accent:#7a4bff;
+  --accent-2:#9a6fff;
+  --completed:#8a6be6;
+  --muted:#cfc7e8;
+  --codex-width:360px;
+  --countdown-circ:440;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100vh; background:linear-gradient(180deg,var(--bg), #161226 86%);
+  color:#fff; font-family:Inter, "Poppins", system-ui, -apple-system; -webkit-font-smoothing:antialiased;
+  display:flex; align-items:center; justify-content:center; padding:20px;
+}
+
+/* Wrap + header (minimal) */
+.wrap{ width:min(1200px,96vw); max-width:1200px; position:relative; }
+header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:12px; }
+h1{ margin:0; color:var(--muted); font-weight:600; font-size:1.05rem; }
+
+/* Floating top icons (style A: minimal) */
+.iconBtn{
+  position:fixed; width:46px; height:46px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(180deg, rgba(122,75,255,0.16), rgba(122,75,255,0.08)); color:white; border:1px solid rgba(255,255,255,0.04);
+  cursor:pointer; z-index:16000; box-shadow:0 8px 30px rgba(122,75,255,0.08);
+}
+#restartBtn{ left:16px; top:16px; }
+#codexToggle{ right:16px; top:16px; }
+
+/* HUD small display near top */
+.hud{ display:flex; gap:12px; align-items:center; color:var(--muted); font-weight:600; }
+
+/* GRID */
+#grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:10px; width:min(84vmin,900px); aspect-ratio:1/1; perspective:1000px; }
+.tile{
+  background:linear-gradient(180deg,#1b1622,#181022); border-radius:12px; display:flex; align-items:center; justify-content:center;
+  transition:transform .28s, box-shadow .28s, background .28s, opacity .28s; cursor:pointer; position:relative; overflow:hidden;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
+  min-height:0;
+}
+.tile:hover{ transform: translateY(-6px) scale(1.03); box-shadow: 0 18px 60px rgba(122,75,255,0.08); }
+.stub{ width:82%; height:82%; border-radius:8px; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); display:flex; align-items:center; justify-content:center; font-family:Georgia,serif; font-weight:700; color:#fff; text-align:center; padding:8px; }
+.tile.completed{ background: linear-gradient(180deg,var(--completed), #6f49d9); box-shadow:0 20px 50px rgba(111,73,217,0.18); transform:none; animation:completedPulse .9s ease; }
+@keyframes completedPulse{ 0%{ transform:scale(1.02);} 50%{ transform:scale(1);} 100%{ transform:scale(1.01);} }
+
+/* Yeshua portal soft ethereal border */
+.tile.portal.yeshua::after{ content:""; position:absolute; inset:0; pointer-events:none; box-shadow: inset 0 0 40px rgba(255,240,200,0.06), 0 8px 40px rgba(200,160,255,0.03); border-radius:12px; }
+
+/* overlay & modal (modal z lower than codex toggles) */
+#overlay{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.6); z-index:15000; }
+#overlay.active{ display:flex; }
+.modal{ width:min(920px,94%); max-height:86vh; overflow:auto; background:linear-gradient(180deg,#110617,#1a0f2b); padding:18px; border-radius:12px; box-shadow:0 20px 80px rgba(0,0,0,0.6); color:#fff; position:relative; }
+.row{ display:flex; gap:14px; align-items:flex-start; }
+.left{ width:140px; flex:0 0 140px; }
+.bigPortrait{ width:140px; height:140px; border-radius:10px; background:#221132; display:flex; align-items:center; justify-content:center; font-family:Georgia,serif; font-weight:700; }
+
+/* countdown halo */
+.countdownWrap{ position:absolute; right:18px; top:18px; width:70px; height:70px; z-index:2000; pointer-events:none; display:flex; align-items:center; justify-content:center; }
+.countdownSVG{ width:86%; height:86%; transform:rotate(-90deg); }
+.countdownCircle{ fill:none; stroke:rgba(255,255,255,0.03); stroke-width:6; }
+.countdownRing{ fill:none; stroke:var(--accent); stroke-width:6; stroke-linecap:round; stroke-dasharray: var(--countdown-circ); stroke-dashoffset: 0; }
+
+/* countdown numeric label */
+.countdownLabel{ position:absolute; right:28px; top:26px; font-size:12px; color:var(--muted); pointer-events:none; }
+
+/* codex drawer slide-in */
+#codexPanel{
+  position:fixed; right:0; top:0; height:100vh; width:var(--codex-width); background:linear-gradient(180deg,#1b0b2f,#241235); box-shadow:-20px 0 60px rgba(0,0,0,0.6);
+  transform:translateX(100%); transition:transform .45s cubic-bezier(.2,.9,.25,1); z-index:17000; padding:12px; overflow:auto;
+}
+#codexPanel.open{ transform:translateX(0); }
+.codex-header{ display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.codex-list{ margin-top:12px; display:flex; flex-direction:column; gap:8px; }
+.codex-item{ padding:10px; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:8px; display:flex; gap:12px; align-items:center; }
+.codex-item.completed{ border-left:4px solid #7cff7c; opacity:0.95; }
+.codex-item img{ width:64px; height:64px; border-radius:8px; }
+
+/* badge gallery area */
+.badge-gallery{ margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; }
+
+/* restart button style */
+#restartBtn{ display:flex; align-items:center; justify-content:center; }
+
+/* simple responsive */
+@media (max-width:900px){
+  #codexPanel{ width:86vw; }
+  .left{ display:none; }
+  .bigPortrait{ width:100%; height:120px; margin-bottom:8px; }
+}
+</style>
+</head>
+<body>
+  <div class="wrap" aria-live="polite">
+    <header>
+      <h1>Comfort Café — Mini-Paris</h1>
+      <div style="display:flex;gap:12px;align-items:center;">
+        <div class="hud"><div id="scoreDisplay">Score: 0</div><div id="badgeCount" style="opacity:0.9">Badges: 0</div></div>
+      </div>
+    </header>
+
+    <main>
+      <div id="grid" aria-label="Chimera grid"></div>
+    </main>
+  </div>
+
+  <!-- Minimal floating icons (A) -->
+  <div id="restartBtn" class="iconBtn" title="Restart progress">
+    ↻
+  </div>
+  <div id="codexToggle" class="iconBtn" title="Open Codex">
+    📖
+  </div>
+
+  <!-- Login overlay (reliable) -->
+  <div id="loginOverlay" role="dialog" aria-modal="true" style="display:flex; align-items:center; justify-content:center; inset:0; position:fixed; z-index:18000; background:linear-gradient(180deg, rgba(0,0,0,0.86), rgba(0,0,0,0.9));">
+    <div class="loginCard" style="width:400px; background:linear-gradient(180deg,#1b0f2b,#241235); padding:22px; border-radius:12px; text-align:center; box-shadow:0 40px 120px rgba(0,0,0,0.6);">
+      <h2 style="font-family:Georgia, serif; margin:0 0 6px 0;">Enter the Café</h2>
+      <input id="usernameInput" placeholder="Your name (or Guest)" style="width:88%; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.06); background:rgba(0,0,0,0.08); color:#fff;"/>
+      <div style="margin-top:12px; display:flex; gap:8px; justify-content:center;">
+        <button id="loginEnterBtn" class="btn">Enter</button>
+        <button id="loginGuestBtn" class="btn ghost">Guest</button>
+      </div>
+      <p style="margin-top:10px;color:var(--muted);font-size:0.88rem;">Progress is saved locally in this browser.</p>
+    </div>
+  </div>
+
+  <!-- Overlay & modal -->
+  <div id="overlay" role="dialog" aria-hidden="true">
+    <div class="modal" id="modalBox" role="document"></div>
+  </div>
+
+  <!-- Codex panel (drawer) -->
+  <aside id="codexPanel" aria-hidden="true" aria-label="Codex drawer">
+    <div class="codex-header">
+      <h3 style="margin:0;">Codex</h3>
+      <div style="display:flex;gap:8px;">
+        <button id="closeCodex" class="btn ghost">Close</button>
+      </div>
+    </div>
+    <div class="codex-list" id="codexList"></div>
+    <hr style="opacity:0.06;margin:12px 0;">
+    <div><strong>Badges</strong></div>
+    <div class="badge-gallery" id="badgeGallery"></div>
+  </aside>
+
+  <!-- Miki audio (hidden controls for our buttons) -->
+  <audio id="mikiAudio" src="cafespiritpulse.mp3"></audio>
+
+<script>
+/* Final B-Plus Single-file HTML JS
+   - Top bar icons (style A)
+   - Codex drawer slide-in
+   - Halo timer 25s fixed auto-close (pauses on hover)
+   - Restart button clears progress
+   - Miki music playback & download link
+   - Persistent storage in localStorage
+   - All event listeners attached inside DOMContentLoaded
+*/
+
+document.addEventListener('DOMContentLoaded', () => {
+
+  // Elements
+  const grid = document.getElementById('grid');
+  const loginOverlay = document.getElementById('loginOverlay');
+  const usernameInput = document.getElementById('usernameInput');
+  const loginEnterBtn = document.getElementById('loginEnterBtn');
+  const loginGuestBtn = document.getElementById('loginGuestBtn');
+  const overlay = document.getElementById('overlay');
+  const modalBox = document.getElementById('modalBox');
+  const codexPanel = document.getElementById('codexPanel');
+  const codexToggle = document.getElementById('codexToggle');
+  const closeCodexBtn = document.getElementById('closeCodex');
+  const codexList = document.getElementById('codexList');
+  const badgeGallery = document.getElementById('badgeGallery');
+  const restartBtn = document.getElementById('restartBtn');
+  const mikiAudio = document.getElementById('mikiAudio');
+  const scoreDisplay = document.getElementById('scoreDisplay');
+  const badgeCount = document.getElementById('badgeCount');
+
+  // Config
+  const GRID_SIZE = 7;
+  const TOTAL = GRID_SIZE * GRID_SIZE;
+  const AUTO_CLOSE_MS = 25000; // 25s fixed auto-close
+  const COUNTDOWN_CIRC = 440;
+
+  // Storage keys
+  const STORAGE = {
+    CODEX: 'chimera_codex_vBplus',
+    COMPLETED: 'chimera_completed_vBplus',
+    SCORE: 'chimera_score_vBplus',
+    BADGES: 'chimera_badges_vBplus',
+    USER: 'chimera_user_vBplus'
+  };
+
+  // State
+  let codex = JSON.parse(localStorage.getItem(STORAGE.CODEX) || '[]'); // {id,title,desc,img,completed,when}
+  let completed = JSON.parse(localStorage.getItem(STORAGE.COMPLETED) || '{}'); // index:true
+  let score = Number(localStorage.getItem(STORAGE.SCORE) || 0);
+  let badges = JSON.parse(localStorage.getItem(STORAGE.BADGES) || '[]'); // {id,title,desc,img,when}
+  let username = localStorage.getItem(STORAGE.USER) || '';
+
+  // HUD update
+  function updateHUD(){ scoreDisplay.textContent = `Score: ${score}`; badgeCount.textContent = `Badges: ${badges.length}`; }
+  updateHUD();
+
+  // Characters config
+  const CHARACTERS = {
+    star: { key:'star', name:'Star', img:'placeholder_star.png', answer: 'freedom' },
+    hans: { key:'hans', name:'Hans', img:'placeholder_hans.png', answer: 'mini-paris' },
+    chari: { key:'chari', name:'Chari', img:'placeholder_chari.png', answer: 'yeshua' },
+    milo: { key:'milo', name:'Milo', img:'placeholder_milo.png', answer: 'gardener' },
+    miki: { key:'miki', name:'Miki', img:'placeholder_miki.png', answer: 'lab', music:true },
+  };
+
+  // portals indexes (0-based)
+  const PORTALS = { hans:6, yeshua:20, miki:42 };
+
+  // Utility esc
+  const esc = s => String(s||'').replace(/[&<>"'`]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;'}[m]));
+
+  // persistence
+  function saveAll(){ localStorage.setItem(STORAGE.CODEX, JSON.stringify(codex)); localStorage.setItem(STORAGE.COMPLETED, JSON.stringify(completed)); localStorage.setItem(STORAGE.SCORE, String(score)); localStorage.setItem(STORAGE.BADGES, JSON.stringify(badges)); localStorage.setItem(STORAGE.USER, username); updateHUD(); }
+
+  // map tile index to content
+  function mapTile(i){
+    if (i === PORTALS.hans) return { type:'portal', id:'portal_hans', title:'Hans Portal', desc:'Hans — tea & snark.', img:CHARACTERS.hans.img };
+    if (i === PORTALS.miki) return { type:'portal', id:'portal_miki', title:'Miki Portal', desc:'Miki — music & portals.', img:CHARACTERS.miki.img };
+    if (i === PORTALS.yeshua) return { type:'portal', id:'portal_yeshua', title:'Yeshua', desc:'Soft ethereal presence & Romans (Romans 10:13).', img:'' };
+    if (i % 2 === 0){
+      const keys = Object.keys(CHARACTERS);
+      const char = CHARACTERS[keys[(i/2) % keys.length]];
+      return { type:'character', id:`char_${char.key}_${i}`, title:char.name, desc: `${char.name} — a chimera guardian of the Café.`, img:char.img, key:char.key, answer:char.answer, music: (char.music||false) };
+    }
+    const loreArr = [
+      'Mini-Paris was stitched from moonlight and cobblestone.',
+      'A faded lab token reads: "Atelier — experimental wing."',
+      'The Café floor sometimes remembers old songs.',
+      'A rat leaves a tiny key behind — Chari notices it.',
+      'Milo hums to the herbs; they unfurl like memories.'
+    ];
+    return { type:'lore', id:`lore_${i}`, title:'Mystery Fragment', desc:loreArr[i % loreArr.length], img:'' };
+  }
+
+  /* ---------------------------
+     Grid creation & animated entrance
+     ---------------------------*/
+  function createGrid(){
+    grid.innerHTML = '';
+    for (let i=0;i<TOTAL;i++){
+      const tile = document.createElement('div'); tile.className = 'tile'; tile.dataset.index = i;
+      const mapping = mapTile(i);
+      const stub = document.createElement('div'); stub.className = 'stub'; stub.textContent = mapping.title;
+      tile.appendChild(stub);
+      if (mapping.type === 'portal' && mapping.id === 'portal_yeshua') tile.classList.add('portal','yeshua');
+      if (completed[i]) tile.classList.add('completed');
+      tile.addEventListener('click', ()=> onTileClick(i));
+      // entrance animation
+      tile.style.opacity = 0; tile.style.transform = 'translateY(18px) scale(.98)';
+      setTimeout(()=> { tile.style.opacity = 1; tile.style.transform = 'translateY(0) scale(1)'; }, 60 + i*18 );
+      grid.appendChild(tile);
+    }
+  }
+
+  function onTileClick(i){
+    const mapping = mapTile(i);
+    const replayable = (i === PORTALS.miki);
+    if (completed[i] && !replayable){
+      openModal(`<h2>Already completed</h2><p>This tile is finished — check your Codex.</p><div style="text-align:right;margin-top:12px"><button data-close="popup" class="btn">Close</button></div>`, { tileIndex:i, replayable:false });
+      return;
+    }
+    if (mapping.type === 'portal'){
+      if (mapping.id === 'portal_hans') openCharacterModal(i, 'hans', { replayable:false });
+      else if (mapping.id === 'portal_miki') openCharacterModal(i, 'miki', { replayable:true });
+      else if (mapping.id === 'portal_yeshua') openYeshuaModal(i);
+      return;
+    }
+    if (mapping.type === 'character') openCharacterModal(i, mapping.key || mapping.title.toLowerCase(), { replayable:false });
+    if (mapping.type === 'lore') openLoreModal(i);
+  }
+
+  /* ---------------------------
+     Modal/popup controller with fixed auto-close and countdown
+     ---------------------------*/
+  let popupActive = false;
+  let currentPopup = null; // { tileIndex, replayable, quizActive }
+  let autoCloseTimeout = null;
+  let countdownRAF = null;
+  let countdownStart = 0;
+  let countdownRemaining = AUTO_CLOSE_MS;
+
+  function openModal(html, { tileIndex=null, replayable=false, disableAutoClose=false, quizActive=false } = {}){
+    closeModal({ markCompleted:false }); // clear previous
+    modalBox.innerHTML = html;
+    overlay.classList.add('active');
+    overlay.style.zIndex = 15000; // keep modal below codex which is 17000
+    popupActive = true;
+    currentPopup = { tileIndex, replayable, quizActive };
+
+    if (!disableAutoClose){
+      startCountdown(AUTO_CLOSE_MS);
+    } else {
+      stopCountdown();
+    }
+  }
+
+  function closeModal({ markCompleted=true } = {}){
+    stopCountdown();
+    overlay.classList.remove('active');
+    modalBox.innerHTML = '';
+    popupActive = false;
+
+    if (markCompleted && currentPopup && currentPopup.tileIndex != null && !currentPopup.replayable){
+      completed[currentPopup.tileIndex] = true;
+      finalizeCodexForTile(currentPopup.tileIndex);
+      awardBadge(`tile_${currentPopup.tileIndex}`, `Tile ${currentPopup.tileIndex}`, `Completed tile ${currentPopup.tileIndex}`);
+      saveAll();
+      const tileEl = document.querySelector(`.tile[data-index="${currentPopup.tileIndex}"]`); if (tileEl) tileEl.classList.add('completed');
+    }
+    currentPopup = null;
+  }
+
+  overlay.addEventListener('click', (e)=>{ if (e.target === overlay) closeModal(); });
+  document.addEventListener('keydown', (e)=>{ if (e.key === 'Escape' && popupActive) closeModal(); });
+
+  // countdown UI
+  function createCountdownUI(){
+    if (modalBox.querySelector('.countdownWrap')) return;
+    const wrap = document.createElement('div'); wrap.className = 'countdownWrap';
+    wrap.innerHTML = `<svg class="countdownSVG" viewBox="0 0 150 150"><circle class="countdownCircle" cx="75" cy="75" r="70"></circle><circle class="countdownRing" cx="75" cy="75" r="70" stroke-dasharray="${COUNTDOWN_CIRC}" stroke-dashoffset="0"></circle></svg><div class="countdownLabel" aria-hidden="true"></div>`;
+    modalBox.appendChild(wrap);
+    // pause on hover over modal
+    modalBox.addEventListener('mouseenter', pauseCountdown);
+    modalBox.addEventListener('mouseleave', resumeCountdown);
+    // interaction resets timer
+    modalBox.addEventListener('mousemove', resetAutoCloseTimer);
+    modalBox.addEventListener('keydown', resetAutoCloseTimer);
+    modalBox.addEventListener('click', resetAutoCloseTimer);
+  }
+
+  function startCountdown(ms){
+    stopCountdown();
+    createCountdownUI();
+    countdownStart = performance.now();
+    countdownRemaining = ms;
+    const ring = modalBox.querySelector('.countdownRing');
+    const label = modalBox.querySelector('.countdownLabel');
+    if (!ring) return;
+    const total = ms;
+    // animate via rAF for pause/resume control and numeric label
+    function tick(now){
+      const elapsed = now - countdownStart;
+      const pct = Math.min(1, elapsed / total);
+      const offset = COUNTDOWN_CIRC * pct;
+      ring.style.strokeDashoffset = offset;
+      const remaining = Math.max(0, Math.ceil((total - elapsed)/1000));
+      if (label) label.textContent = `${remaining}s`;
+      if (elapsed >= total){
+        closeModal({ markCompleted:true });
+        return;
+      }
+      countdownRAF = requestAnimationFrame(tick);
+    }
+    countdownRAF = requestAnimationFrame(tick);
+    // auto-close fallback (ensures closure)
+    autoCloseTimeout = setTimeout(()=> { closeModal({ markCompleted:true }); }, ms + 50);
+  }
+
+  function stopCountdown(){
+    if (countdownRAF) cancelAnimationFrame(countdownRAF);
+    countdownRAF = null;
+    if (autoCloseTimeout){ clearTimeout(autoCloseTimeout); autoCloseTimeout = null; }
+    // remove countdown UI
+    const wrap = modalBox.querySelector('.countdownWrap');
+    if (wrap) wrap.remove();
+    modalBox.removeEventListener('mouseenter', pauseCountdown);
+    modalBox.removeEventListener('mouseleave', resumeCountdown);
+  }
+
+  function pauseCountdown(){ if (countdownRAF){ cancelAnimationFrame(countdownRAF); countdownRAF = null; if (autoCloseTimeout){ clearTimeout(autoCloseTimeout); autoCloseTimeout = null; } } }
+  function resumeCountdown(){ // restart from remaining time
+    // compute remaining from current strokeDashoffset
+    const ring = modalBox.querySelector('.countdownRing');
+    if (!ring) return;
+    // calculate elapsed by strokeDashoffset value
+    const offset = parseFloat(ring.style.strokeDashoffset || 0);
+    const pct = Math.min(1, offset / COUNTDOWN_CIRC);
+    const elapsed = pct * AUTO_CLOSE_MS;
+    countdownStart = performance.now() - elapsed;
+    startCountdown(AUTO_CLOSE_MS);
+  }
+
+  function resetAutoCloseTimer(){ // restart full timer on user activity inside modal
+    if (!popupActive) return;
+    startCountdown(AUTO_CLOSE_MS);
+  }
+
+  /* ---------------------------
+     Codex drawer logic (slide-in)
+     ---------------------------*/
+  function refreshCodexPanel(){
+    codexList.innerHTML = '';
+    if (codex.length === 0) codexList.innerHTML = '<p style="opacity:.9">No entries yet — explore tiles to unlock the Codex.</p>';
+    codex.slice().reverse().forEach(e => {
+      const div = document.createElement('div'); div.className = 'codex-item' + (e.completed ? ' completed' : '');
+      if (e.img) div.innerHTML = `<img src="${esc(e.img)}" alt="">`;
+      div.innerHTML += `<div style="flex:1"><strong>${esc(e.title)}</strong><div style="opacity:.9">${esc(e.desc)}</div></div>`;
+      codexList.appendChild(div);
+    });
+    // badges area
+    badgeGallery.innerHTML = '';
+    if (badges.length === 0) badgeGallery.innerHTML = '<div style="opacity:.9">No badges yet</div>';
+    badges.forEach(b => {
+      const d = document.createElement('div'); d.className = 'badgeSmall'; d.style.cssText = 'width:64px;height:64px;border-radius:12px;background:linear-gradient(180deg,#7a4bff,#9a6cff);display:flex;align-items:center;justify-content:center;color:#fff;margin:6px;cursor:pointer;';
+      d.title = b.title; d.textContent = b.title[0] || 'B';
+      d.addEventListener('click', ()=> { openBadgePreview(b); });
+      badgeGallery.appendChild(d);
+    });
+  }
+
+  codexToggle.addEventListener('click', ()=> {
+    // ensure codex sits above modal but doesn't block modal clicks
+    if (codexPanel.classList.contains('open')) { codexPanel.classList.remove('open'); codexPanel.setAttribute('aria-hidden','true'); }
+    else { refreshCodexPanel(); codexPanel.classList.add('open'); codexPanel.setAttribute('aria-hidden','false'); }
+  });
+  closeCodexBtn.addEventListener('click', ()=> { codexPanel.classList.remove('open'); codexPanel.setAttribute('aria-hidden','true'); });
+
+  function openBadgePreview(b){
+    const html = `<h2>${esc(b.title)}</h2><div style="display:flex;gap:12px;align-items:center"><div style="width:180px;height:180px;border-radius:12px;background:#221132;display:flex;align-items:center;justify-content:center;font-weight:700">${esc(b.title)}</div><div><p>${esc(b.desc)}</p><p style="opacity:.9">Unlocked: ${new Date(b.when).toLocaleString()}</p></div></div><div style="text-align:right;margin-top:12px"><button data-close="popup" class="btn">Close</button></div>`;
+    openModal(html, { disableAutoClose:true });
+  }
+
+  /* ---------------------------
+     Badges & Codex helpers
+     ---------------------------*/
+  function ensureCodexEntry(id, title, desc, img=''){
+    if (!codex.some(e => e.id === id)){
+      codex.push({ id, title, desc, img, completed:false, when: Date.now() });
+      saveAll();
+      showFly('Codex +1');
+      return true;
+    }
+    return false;
+  }
+
+  function finalizeCodexForTile(tileIndex){
+    const mapping = mapTile(tileIndex);
+    if (!mapping) return;
+    const idx = codex.findIndex(e => e.id === mapping.id);
+    if (idx >= 0){ codex[idx].completed = true; codex[idx].when = Date.now(); saveAll(); }
+    else { codex.push({ id: mapping.id, title: mapping.title, desc: mapping.desc, img: mapping.img||'', completed: true, when: Date.now() }); saveAll(); }
+  }
+
+  function awardBadge(id, title, desc='', img=''){
+    if (!badges.some(b => b.id === id)){
+      badges.push({ id, title, desc, img, when: Date.now() });
+      saveAll();
+      showFly(title);
+    }
+  }
+
+  function showFly(text='Unlocked'){
+    const el = document.createElement('div'); el.className = 'flyBadge'; el.style.cssText = 'position:fixed;right:22px;top:22px;background:var(--accent);color:#fff;padding:10px 14px;border-radius:999px;z-index:20000;transform-origin:center;animation:flyIn 900ms cubic-bezier(.2,.9,.3,1);box-shadow:0 10px 30px rgba(122,75,255,0.18);';
+    el.textContent = text; document.body.appendChild(el);
+    setTimeout(()=> el.remove(), 2400);
+  }
+
+  /* ---------------------------
+     Character / Lore modals and quizzes
+     ---------------------------*/
+  function openCharacterModal(tileIndex, key, { replayable=false } = {}){
+    const mapping = mapTile(tileIndex);
+    ensureCodexEntry(mapping.id, mapping.title, mapping.desc, mapping.img || '');
+    const char = CHARACTERS[key] || { name: mapping.title, answer: '' };
+    const musicHtml = char.music ? `<div style="margin-top:10px"><button id="mikiPlayBtn" class="btn">Play/Pause</button> <a href="cafespiritpulse.mp3" download class="btn ghost" style="margin-left:8px">Download</a></div>` : '';
+    const html = `<div class="row"><div class="left"><div class="bigPortrait">${esc(mapping.title)}</div></div><div style="flex:1"><h2>${esc(mapping.title)}</h2><p>${esc(mapping.desc)}</p><p style="opacity:.9;margin-top:6px">Quick quiz — short answer:</p><div style="margin-top:8px"><input id="quizInput" placeholder="Your answer..." style="padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);width:60%;background:transparent;color:#fff"> <button id="quizSubmit" class="btn">Submit</button></div>${musicHtml}<div style="text-align:right;margin-top:12px"><button data-close="popup" class="btn">Close</button></div></div></div>`;
+    openModal(html, { tileIndex, replayable, disableAutoClose:false, quizActive:true });
+
+    setTimeout(()=> {
+      const submitBtn = document.getElementById('quizSubmit'); const input = document.getElementById('quizInput');
+      if (submitBtn && input){
+        submitBtn.onclick = () => {
+          const ans = (input.value||'').trim().toLowerCase();
+          const expected = (char && char.answer) ? String(char.answer).toLowerCase() : '';
+          const correct = expected && ans.includes(expected);
+          if (correct){
+            score += 10;
+            awardBadge(`badge_${key}`, `${char.name} Badge`, `Answered about ${char.name}.`);
+            finalizeCodexForTile(tileIndex);
+            saveAll();
+            openModal(`<h2>Correct!</h2><p>You gained 10 points and a badge (if new). Entry saved to Codex.</p><div style="text-align:right;margin-top:12px"><button data-close="popup" class="btn">Close</button></div>`, { tileIndex, replayable, disableAutoClose:false, quizActive:false });
+            completed[tileIndex] = true; const tileEl = document.querySelector(\`.tile[data-index="${tileIndex}"]\`); if (tileEl) tileEl.classList.add('completed');
+            saveAll();
+          } else {
+            submitBtn.textContent = 'Try again'; setTimeout(()=> submitBtn.textContent = 'Submit', 900);
+          }
+        };
+      }
+      const playBtn = document.getElementById('mikiPlayBtn');
+      if (playBtn) playBtn.onclick = ()=> { if (mikiAudio.paused) mikiAudio.play().catch(()=>{}); else mikiAudio.pause(); };
+    }, 40);
+  }
+
+  function openLoreModal(tileIndex){
+    const mapping = mapTile(tileIndex);
+    ensureCodexEntry(mapping.id, mapping.title, mapping.desc, mapping.img||'');
+    openModal(`<h2>${esc(mapping.title)}</h2><p>${esc(mapping.desc)}</p><div style="text-align:right;margin-top:12px"><button data-close="popup" class="btn">Close</button></div>`, { tileIndex, replayable:false, disableAutoClose:false, quizActive:false });
+  }
+
+  function openYeshuaModal(tileIndex){
+    ensureCodexEntry('yeshua', 'Yeshua', 'Soft ethereal presence and Romans (Romans 10:13).', '');
+    openModal(`<h2 style="color:#ffeaae">Eternal Light</h2><p>You step into a soft, ethereal glow. Romans: <em>"Whoever calls on the name of the Lord shall be saved."</em></p><div style="text-align:right;margin-top:12px"><button data-close="popup" class="btn">Return</button></div>`, { tileIndex, replayable:false, disableAutoClose:false, quizActive:false });
+  }
+
+  /* ---------------------------
+     Box #1 — Star expanded cinematic origin story
+     ---------------------------*/
+  function openBoxOneStory(tileIndex){
+    const storyHtml = `<div style="padding:6px 4px">
+      <h2>Star — The Awakening</h2>
+      <p style="line-height:1.45">I remember the cold hum of the glass cage — the lab lights, the clicks. They picked us up from an adoption agency and took us to a place that said "progress" but felt like a cage. The scientists wanted to see whether we could think like them, whether we could mimic a human heart.</p>
+      <p style="line-height:1.45">We were there one year and seven days. On that last day, the scientists whispered about discarding Miki. She was small and bright and trembling — but at the exact moment the glass was unlocked, she bolted. And then — like a thief in the night — Yeshua appeared.</p>
+      <p style="line-height:1.45">There was a BOOM, a sound wave that washed the lab in light. The portal opened. Hans — once a vampire fox-cat — yowled as something inside him broke free. It wasn't pain; it was the first breath of love. The scientists fell to their knees, blinded by the light.</p>
+      <p style="line-height:1.45">We were lifted like fish in a warm current. Yeshua carried us through the roof into a garden paradise, where the smell of fresh coffee and herbs filled the air, brewed by angels. We didn't die — we were more alive than ever. We had been granted a new realm, a home between the old world and this new paradise. That is the birth of the Chimera Cat Café.</p>
+      <p style="line-height:1.45"><em>— Star</em></p>
+      <div style="text-align:center;margin-top:12px"><button id="storyCompleteBtn" class="btn">I witnessed the Awakening</button> <button data-close="popup" class="btn ghost">Close</button></div>
+    </div>`;
+    openModal(storyHtml, { tileIndex, replayable:false, disableAutoClose:false, quizActive:false });
+    setTimeout(()=> {
+      const completeBtn = document.getElementById('storyCompleteBtn');
+      if (completeBtn){
+        completeBtn.onclick = () => {
+          awardBadge('liberated_soul','Liberated Soul','Witnessed the birth of the Café.');
+          ensureCodexEntry('origin_story','The Awakening','Star recounts the escape and the arrival in the Garden-Café.');
+          completed[tileIndex] = true;
+          const tileEl = document.querySelector(\`.tile[data-index="${tileIndex}"]\`); if (tileEl) tileEl.classList.add('completed');
+          saveAll();
+          openModal(`<h2>Achievement Unlocked</h2><p><strong>Liberated Soul</strong> — You witnessed the birth of the Café and earned a badge.</p><div style="text-align:right;margin-top:12px"><button data-close="popup" class="btn">Nice</button></div>`, { disableAutoClose:false });
+        };
+      }
+    }, 40);
+  }
+
+  /* ---------------------------
+     Restart behavior (clear progress)
+     ---------------------------*/
+  restartBtn.addEventListener('click', ()=>{
+    const ok = confirm('Restart progress? This will clear Codex, badges, scores and completed tiles. Your username will remain. Continue?');
+    if (!ok) return;
+    // clear
+    codex = [];
+    completed = {};
+    score = 0;
+    badges = [];
+    saveAll();
+    // visual reset
+    document.querySelectorAll('.tile').forEach(t => t.classList.remove('completed'));
+    refreshCodexUI();
+    updateHUD();
+    showFly('Progress reset');
+  });
+
+  /* ---------------------------
+     Codex UI refresh helper (for external calls)
+     ---------------------------*/
+  function refreshCodexUI(){ if (codexPanel.classList.contains('open')) refreshCodexPanel(); }
+
+  function refreshCodexPanel(){
+    codexList.innerHTML = '';
+    if (codex.length === 0) codexList.innerHTML = '<p style="opacity:.9">No entries yet — explore tiles to unlock the Codex.</p>';
+    codex.slice().reverse().forEach(e => {
+      const div = document.createElement('div'); div.className = 'codex-item' + (e.completed ? ' completed' : '');
+      if (e.img) div.innerHTML = `<img src="${esc(e.img)}" alt="">`;
+      div.innerHTML += `<div style="flex:1"><strong>${esc(e.title)}</strong><div style="opacity:.9">${esc(e.desc)}</div></div>`;
+      codexList.appendChild(div);
+    });
+    // badges
+    badgeGallery.innerHTML = '';
+    if (badges.length === 0) badgeGallery.innerHTML = '<div style="opacity:.9">No badges yet</div>';
+    badges.forEach(b => {
+      const d = document.createElement('div'); d.className = 'badgeSmall'; d.style.cssText = 'width:64px;height:64px;border-radius:12px;background:linear-gradient(180deg,#7a4bff,#9a6cff);display:flex;align-items:center;justify-content:center;color:#fff;margin:6px;cursor:pointer;';
+      d.title = b.title; d.textContent = b.title[0] || 'B';
+      d.addEventListener('click', ()=> { openBadgePreview(b); });
+      badgeGallery.appendChild(d);
+    });
+  }
+
+  function openBadgePreview(b){
+    const html = `<h2>${esc(b.title)}</h2><div style="display:flex;gap:12px;align-items:center"><div style="width:180px;height:180px;border-radius:12px;background:#221132;display:flex;align-items:center;justify-content:center;font-weight:700">${esc(b.title)}</div><div><p>${esc(b.desc)}</p><p style="opacity:.9">Unlocked: ${new Date(b.when).toLocaleString()}</p></div></div><div style="text-align:right;margin-top:12px"><button data-close="popup" class="btn">Close</button></div>`;
+    openModal(html, { disableAutoClose:true });
+  }
+
+  /* ---------------------------
+     Startup: login flow & initial grid
+     ---------------------------*/
+  function startApp(){
+    createGrid();
+    // if first tile not completed, open Star intro shortly after grid anim
+    setTimeout(()=> {
+      if (!completed[0]) openBoxOneStory(0);
+      refreshCodexUI();
+    }, 420);
+  }
+
+  // login handlers (guaranteed to work)
+  loginEnterBtn.addEventListener('click', ()=> {
+    const name = (usernameInput.value || '').trim();
+    if (!name){ alert('Please enter a name or click Guest'); return; }
+    username = name; localStorage.setItem(STORAGE.USER, username);
+    loginOverlay.style.display = 'none';
+    startApp();
+  });
+  loginGuestBtn.addEventListener('click', ()=> {
+    usernameInput.value = 'Guest'; username = 'Guest'; localStorage.setItem(STORAGE.USER, username);
+    loginOverlay.style.display = 'none';
+    startApp();
+  });
+  usernameInput.addEventListener('keydown', (e)=> { if (e.key === 'Enter') loginEnterBtn.click(); });
+
+  // delegated close (data-close)
+  document.addEventListener('click', (e)=> {
+    const btn = e.target.closest('[data-close="popup"]');
+    if (btn){ closeModal({ markCompleted:true }); saveAll(); refreshCodexUI(); }
+  });
+
+  // Expose convenience functions
+  window.Chimera = { saveAll, openModal, closeModal, codex, completed, badges, score, awardBadge };
+
+  // If user previously logged in, skip overlay
+  if (localStorage.getItem(STORAGE.USER)){
+    username = localStorage.getItem(STORAGE.USER);
+    loginOverlay.style.display = 'none';
+    startApp();
+  } else {
+    loginOverlay.style.display = 'flex';
+    usernameInput.focus();
+  }
+
+  // ensure keyboard accessibility for floating icons
+  codexToggle.tabIndex = 0; codexToggle.addEventListener('keydown', (e)=> { if (e.key === 'Enter') codexToggle.click(); });
+  restartBtn.tabIndex = 0; restartBtn.addEventListener('keydown', (e)=> { if (e.key === 'Enter') restartBtn.click(); });
+
+}); // DOMContentLoaded end
+</script>
+</body>
+</html>
