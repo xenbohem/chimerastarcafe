@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Comfort Café — Chimera Grid (7×7) — Glitch Login</title>
+<style>
+:root{
+  --bg:#0c0c12;
+  --panel:#12061a;
+  --accent:#7a4bff;
+  --accent-soft: rgba(122,75,255,0.12);
+  --completed:#6f49d9;
+  --muted:#cfc7e8;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100vh; background:linear-gradient(180deg,var(--bg), #161226 85%);
+  color:#fff; font-family:Inter, "Poppins", system-ui, -apple-system; display:flex; align-items:center; justify-content:center;
+  padding:20px; -webkit-font-smoothing:antialiased;
+}
+
+/* wrapper & header */
+.wrap{ width:min(1200px,96vw); max-width:1200px; position:relative; }
+header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+h1{ margin:0; color:var(--muted); font-weight:600; font-size:1.05rem; }
+.controls{ display:flex; gap:10px; align-items:center; }
+
+/* login overlay (center) */
+#loginOverlay{
+  position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(180deg, rgba(0,0,0,0.82), rgba(0,0,0,0.86));
+  backdrop-filter: blur(6px);
+}
+.loginCard{
+  width:360px; padding:22px; border-radius:12px; background:linear-gradient(180deg,#1b0f2b,#241235);
+  box-shadow: 0 20px 80px rgba(0,0,0,0.6); text-align:center; position:relative; overflow:hidden;
+}
+.loginTitle{ font-family: Georgia, serif; font-size:1.6rem; margin:0 0 6px 0; letter-spacing:0.6px; }
+.loginCard input{ width:100%; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.05); background:rgba(255,255,255,0.02); color:#fff; margin-top:12px; }
+.btn{ background:var(--accent); color:#fff; border:none; padding:10px 14px; border-radius:8px; cursor:pointer; font-weight:600; }
+.btn.ghost{ background:transparent; border:1px solid rgba(255,255,255,0.06); color:var(--muted); }
+
+/* Glitch visuals */
+.glitchWrap{ position:absolute; inset:0; pointer-events:none; display:flex; align-items:center; justify-content:center; }
+.glitchText{ position:relative; font-family:Georgia, serif; font-size:1.6rem; color:#fff; mix-blend-mode:screen;}
+.glitchText::before, .glitchText::after{
+  content:attr(data-text); position:absolute; left:0; top:0; width:100%;
+  clip: rect(0,9999px,0,0); /* will be animated */
+}
+.glitchText::before{ color:#ffb6c1; transform:translateX(-2px); opacity:0.9;}
+.glitchText::after{ color:#b6d3ff; transform:translateX(2px); opacity:0.9;}
+
+/* subtle scanline during glitch */
+.glitch-scan{ position:absolute; inset:0; background-image: linear-gradient(rgba(255,255,255,0.01) 1px, transparent 1px); background-size: 100% 6px; opacity:0; pointer-events:none; }
+
+/* GRID */
+#grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:10px; width:100%; aspect-ratio:1/1; perspective:1000px; }
+.tile{
+  background:linear-gradient(180deg,#1b1622,#181022); border-radius:12px; display:flex; align-items:center; justify-content:center;
+  transition:transform .28s, box-shadow .28s, background .28s, opacity .28s; cursor:pointer; position:relative; overflow:hidden;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
+}
+.tile:hover{ transform: translateY(-6px) scale(1.03); box-shadow:0 18px 60px var(--accent-soft); }
+.stub{ width:80%; height:80%; border-radius:8px; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); display:flex; align-items:center; justify-content:center; font-family:Georgia,serif; font-weight:700; color:#fff; text-align:center; padding:8px; }
+.tile.completed{ background: linear-gradient(180deg, var(--completed), #805de3); box-shadow:0 20px 50px rgba(111,73,217,0.18); animation:completedPulse .9s ease; }
+@keyframes completedPulse{ 0%{ transform:scale(1.02);} 50%{ transform:scale(1);} 100%{ transform:scale(1.01);} }
+.tile.portal.yeshua::after{ content:""; position:absolute; inset:0; pointer-events:none; box-shadow: inset 0 0 40px rgba(255,240,200,0.06), 0 8px 40px rgba(200,160,255,0.03); border-radius:12px; }
+
+/* overlay & modal */
+#overlay{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.6); z-index:9998; }
+#overlay.active{ display:flex; }
+.modal{ width:min(920px,94%); max-height:86vh; overflow:auto; background:linear-gradient(180deg,#110617,#1a0f2b); padding:18px; border-radius:12px; box-shadow:0 20px 80px rgba(0,0,0,0.6); color:#fff; }
+.row{ display:flex; gap:14px; align-items:flex-start; }
+.left{ width:140px; flex:0 0 140px; }
+.bigPortrait{ width:140px; height:140px; border-radius:10px; background:#221132; display:flex; align-items:center; justify-content:center; font-family:Georgia,serif; font-weight:700; }
+
+/* countdown ring */
+.countdownWrap{ position:absolute; right:18px; top:18px; width:56px; height:56px; z-index:200; pointer-events:none; }
+.countdownSVG{ width:100%; height:100%; transform:rotate(-90deg); }
+.countdownCircle{ fill:none; stroke:#2b1733; stroke-width:6; }
+.countdownRing{ fill:none; stroke:var(--accent); stroke-width:6; stroke-linecap:round; stroke-dasharray: 440; stroke-dashoffset: 0; transition: stroke-dashoffset 0.1s linear; }
+.ringAnim{ animation: ringAnim linear var(--duration) forwards; }
+@keyframes ringAnim{ from { stroke-dashoffset: 0; } to { stroke-dashoffset: 440; } }
+
+/* codex & badge gallery */
+.codex-list{ max-height:60vh; overflow-y:auto; display:flex; flex-direction:column; gap:10px; margin-top:8px; }
+.codex-item{ padding:10px; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:8px; display:flex; gap:12px; align-items:center; }
+.codex-item.completed{ border-left:4px solid #7cff7c; opacity:0.9; }
+.codex-item img{ width:68px; height:68px; border-radius:8px; object-fit:cover; }
+
+.galleryGrid{ display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+.badgeSmall{ width:72px; height:72px; border-radius:12px; background:linear-gradient(180deg,#7a4bff,#9a6cff); display:flex; align-items:center; justify-content:center; font-weight:700; cursor:pointer; box-shadow:0 10px 30px rgba(122,75,255,0.12); color:white; }
+
+/* fly badge */
+.flyBadge{ position:fixed; right:22px; top:22px; z-index:20000; background:var(--accent); color:white; padding:8px 12px; border-radius:999px; transform-origin:center; animation: flyIn 900ms cubic-bezier(.2,.9,.3,1); box-shadow:0 10px 30px rgba(122,75,255,0.18); }
+@keyframes flyIn{ 0%{ transform:translateY(30px) scale(.85); opacity:0 } 40%{ transform:translateY(-6px) scale(1.06); opacity:1 } 100%{ transform:translateY(0) scale(1); opacity:1 } }
+
+/* HUD */
+.hud{ display:flex; gap:12px; align-items:center; color:var(--muted); font-weight:600; }
+
+@media (max-width:900px){ .row{ flex-direction:column; } .left{ width:100%; } .bigPortrait{ margin-bottom:8px; } }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Comfort Café — Mini-Paris Grid</h1>
+      <div style="display:flex;gap:12px;align-items:center;">
+        <div class="hud">
+          <div id="scoreDisplay">Score: 0</div>
+          <div id="badgesDisplay">Badges: 0</div>
+        </div>
+        <div class="controls">
+          <button id="codexBtn" class="btn">Open Codex</button>
+          <button id="galleryBtn" class="btn ghost">Badge Gallery</button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <div id="grid" aria-label="Chimera grid"></div>
+    </main>
+  </div>
+
+  <!-- login overlay -->
+  <div id="loginOverlay" role="dialog" aria-modal="true">
+    <div class="loginCard" id="loginCard">
+      <div class="glitchWrap" id="glitchWrap" style="display:none;">
+        <div class="glitchText" id="glitchText" data-text=""></div>
+        <div class="glitch-scan" id="glitchScan" style="opacity:0"></div>
+      </div>
+
+      <div class="loginTitle" id="loginTitle">Enter the Café</div>
+      <input id="userInput" placeholder="Your name (or Guest)"/>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;">
+        <button id="enterBtn" class="btn">Enter</button>
+        <button id="guestBtn" class="btn ghost">Guest</button>
+      </div>
+      <p style="margin-top:10px;color:var(--muted);font-size:0.9rem;">Progress is stored locally in this browser.</p>
+    </div>
+  </div>
+
+  <!-- overlay & modal -->
+  <div id="overlay" aria-hidden="true">
+    <div class="modal" id="modalBox"></div>
+  </div>
+
+  <!-- video + audio (hidden until used) -->
+  <div id="videoContainer" style="display:none; position:fixed; right:18px; bottom:18px; width:320px; z-index:9997;">
+    <video id="characterVideo" src="character_intro.mp4" playsinline></video>
+  </div>
+  <audio id="mikiTrack" src="cafespiritpulse.mp3"></audio>
+
+<script>
+/* Final single-file app with Glitch login + soft zap (WebAudio)
+   - All JS runs inside DOMContentLoaded
+   - Auto-close on inactivity (7s)
+   - Countdown ring, codex, badge gallery, quiz scoring, completed tiles
+   - Soft zap played during glitch (WebAudio synth)
+*/
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Elements
+  const gridEl = document.getElementById('grid');
+  const loginOverlay = document.getElementById('loginOverlay');
+  const enterBtn = document.getElementById('enterBtn');
+  const guestBtn = document.getElementById('guestBtn');
+  const userInput = document.getElementById('userInput');
+  const loginCard = document.getElementById('loginCard');
+  const glitchWrap = document.getElementById('glitchWrap');
+  const glitchText = document.getElementById('glitchText');
+  const glitchScan = document.getElementById('glitchScan');
+  const overlay = document.getElementById('overlay');
+  const modalBox = document.getElementById('modalBox');
+  const codexBtn = document.getElementById('codexBtn');
+  const galleryBtn = document.getElementById('galleryBtn');
+  const hudScore = document.getElementById('scoreDisplay');
+  const hudBadges = document.getElementById('badgesDisplay');
+  const videoContainer = document.getElementById('videoContainer');
+  const video = document.getElementById('characterVideo');
+  const mikiTrack = document.getElementById('mikiTrack');
+
+  // Config
+  const GRID_SIZE = 7, TOTAL = GRID_SIZE * GRID_SIZE;
+  const INACTIVITY_MS = 7000;
+  const COUNTDOWN_LEN = 440;
+
+  // Characters + quiz answers
+  const CHARACTERS = [
+    { key:'star', name:'Star', img:'placeholder_star.png', desc:'Star inherited the Comfort Café and cares for everyone.', answer:'freedom' },
+    { key:'hans', name:'Hans', img:'placeholder_hans.png', desc:'Hans — witty, snarky, once a vampire experiment. Tea solves things.', answer:'mini-paris' },
+    { key:'chari', name:'Chari', img:'placeholder_chari.png', desc:'Chari — rat-cat apprentice with support rats and scars.', answer:'yeshua' },
+    { key:'milo', name:'Milo', img:'placeholder_milo.png', desc:'Milo — herb gardener, Taoist calm.', answer:'gardener' },
+    { key:'miki', name:'Miki', img:'placeholder_miki.png', desc:'Miki — musical alchemist; her frequencies are portals.', answer:'lab', music:true }
+  ];
+  const PORTALS = { hans:6, yeshua:20, miki:42 };
+
+  // Storage keys
+  const CODEx_KEY = 'chimera_codex_v7';
+  const COMPLETED_KEY = 'chimera_completed_v7';
+  const SCORE_KEY = 'chimera_score_v2';
+  const BADGES_KEY = 'chimera_badges_v2';
+
+  // Load persistent data
+  let codex = JSON.parse(localStorage.getItem(CODEx_KEY) || '[]'); // entries {id,title,text,img,category,completed}
+  let completedTiles = JSON.parse(localStorage.getItem(COMPLETED_KEY) || '{}'); // map index -> true
+  let score = Number(localStorage.getItem(SCORE_KEY) || 0);
+  let badges = JSON.parse(localStorage.getItem(BADGES_KEY) || '[]'); // {id,title,img,desc,when}
+
+  function saveAll(){
+    localStorage.setItem(CODEx_KEY, JSON.stringify(codex));
+    localStorage.setItem(COMPLETED_KEY, JSON.stringify(completedTiles));
+    localStorage.setItem(SCORE_KEY, String(score));
+    localStorage.setItem(BADGES_KEY, JSON.stringify(badges));
+    updateHUD();
+  }
+  function updateHUD(){ hudScore.textContent = `Score: ${score}`; hudBadges.textContent = `Badges: ${badges.length}`; }
+  updateHUD();
+
+  // Activity tracking
+  let lastActivity = Date.now();
+  let inactivityTimer = null;
+  let popupActive = false;
+  let currentPopupSource = null; // {tileIndex,replayable,quizActive}
+
+  function recordActivity(){ lastActivity = Date.now(); if (popupActive) restartCountdown(); }
+  ['mousemove','mousedown','touchstart','keydown','wheel'].forEach(ev => window.addEventListener(ev, recordActivity, {passive:true}));
+
+  // Countdown ring helpers
+  function showCountdown(){
+    if (!modalBox.querySelector('.countdownWrap')){
+      const wrap = document.createElement('div'); wrap.className = 'countdownWrap';
+      wrap.innerHTML = `<svg class="countdownSVG" viewBox="0 0 150 150"><circle class="countdownCircle" cx="75" cy="75" r="70"></circle><circle class="countdownRing" cx="75" cy="75" r="70" stroke-dasharray="${COUNTDOWN_LEN}" stroke-dashoffset="0"></circle></svg>`;
+      modalBox.appendChild(wrap);
+    }
+    restartCountdown();
+  }
+  function hideCountdown(){ const w = modalBox.querySelector('.countdownWrap'); if (w) w.remove(); }
+  function restartCountdown(){
+    const ring = modalBox.querySelector('.countdownRing');
+    if (!ring) return;
+    ring.style.transition = 'none'; ring.style.strokeDashoffset = '0'; void ring.offsetWidth;
+    ring.style.transition = `stroke-dashoffset ${INACTIVITY_MS}ms linear`; ring.style.strokeDashoffset = COUNTDOWN_LEN;
+    ring.classList.remove('ringAnim'); void ring.offsetWidth; ring.style.setProperty('--duration', `${INACTIVITY_MS}ms`); ring.classList.add('ringAnim');
+  }
+
+  // Popup controller
+  function openModal(html, {tileIndex=null,replayable=false,disableAutoClose=false,quizActive=false} = {}){
+    closeModal({markCompleted:false});
+    modalBox.innerHTML = html;
+    overlay.classList.add('active'); popupActive = true;
+    currentPopupSource = { tileIndex, replayable, quizActive };
+    if (!disableAutoClose) { startInactivity(); showCountdown(); } else { hideCountdown(); }
+  }
+
+  function closeModal({markCompleted=true} = {}){
+    hideCountdown(); stopInactivity();
+    overlay.classList.remove('active'); modalBox.innerHTML = ''; popupActive=false;
+    if (markCompleted && currentPopupSource && currentPopupSource.tileIndex != null && !currentPopupSource.replayable){
+      const idx = currentPopupSource.tileIndex;
+      completedTiles[idx] = true;
+      finalizeCodexForTile(idx);
+      // visual badge & animation
+      awardBadge(`tile_${idx}`, `Tile ${idx} Badge`, `Completed tile ${idx}`);
+      saveAll();
+      const tileEl = document.querySelector(`.tile[data-index="${idx}"]`); if (tileEl) tileEl.classList.add('completed');
+    }
+    currentPopupSource = null;
+  }
+
+  overlay.addEventListener('click', (e)=>{ if (e.target === overlay) closeModal(); });
+  document.addEventListener('keydown', (e)=>{ if (e.key === 'Escape' && popupActive) closeModal(); });
+
+  // inactivity functions
+  function startInactivity(){ stopInactivity(); inactivityTimer = setInterval(()=>{ if (!popupActive) return; if (currentPopupSource && currentPopupSource.quizActive) return; if (Date.now() - lastActivity >= INACTIVITY_MS){ closeModal({markCompleted:true}); } }, 500); }
+  function stopInactivity(){ if (inactivityTimer){ clearInterval(inactivityTimer); inactivityTimer = null; } }
+
+  // codex helpers
+  function ensureCodexEntry(id,title,text,img='',category='general'){
+    if (!codex.some(e=>e.id===id)){ codex.push({id,title,text,img,category,completed:false,when:Date.now()}); saveAll(); animateCodexUnlock(); return true; }
+    return false;
+  }
+  function finalizeCodexForTile(tileIndex){
+    const mapping = mapTile(tileIndex);
+    if (!mapping) return;
+    const idx = codex.findIndex(e=>e.id===mapping.id);
+    if (idx>=0){ codex[idx].completed = true; codex[idx].when = Date.now(); saveAll(); }
+    else { codex.push({ id:mapping.id, title:mapping.title, text:mapping.desc, img:mapping.img||'', category:mapping.category||'character', completed:true, when:Date.now() }); saveAll(); }
+  }
+
+  function animateCodexUnlock(){
+    const fly = document.createElement('div'); fly.className='flyBadge'; fly.textContent = 'Codex +1';
+    document.body.appendChild(fly); setTimeout(()=> fly.remove(), 2000);
+  }
+
+  // badge handling
+  function awardBadge(id,title,desc,img=''){
+    if (!badges.some(b=>b.id===id)){
+      badges.push({ id,title,img,desc,when:Date.now() });
+      saveAll();
+      const fly = document.createElement('div'); fly.className='flyBadge'; fly.textContent = title; document.body.appendChild(fly); setTimeout(()=> fly.remove(), 2200);
+    }
+  }
+
+  // mapping tile -> content
+  function mapTile(i){
+    if (i === PORTALS.hans) return { id:'portal_hans', title:'Hans Portal', desc:'Hans — tea & snark.', img:'placeholder_hans.png', category:'portal' };
+    if (i === PORTALS.miki) return { id:'portal_miki', title:'Miki Portal', desc:'Miki — music & portals.', img:'placeholder_miki.png', category:'portal' };
+    if (i === PORTALS.yeshua) return { id:'portal_yeshua', title:'Yeshua', desc:'Soft ethereal presence & Romans (Romans 10:13).', img:'', category:'portal' };
+    if (i % 2 === 0){
+      const c = CHARACTERS[(i/2) % CHARACTERS.length];
+      return { id:`char_${c.key}_${i}`, title:c.name, desc:c.desc, img:c.img, category:'character', key:c.key, answer:c.answer };
+    }
+    const lore = ['Mini-Paris was stitched from moonlight and cobblestone.','A faded lab token reads: "Atelier — experimental wing."','The Café floor sometimes remembers old songs.','A rat leaves a tiny key behind — Chari notices it.','Milo hums to the herbs; they unfurl like memories.'];
+    return { id:`lore_${i}`, title:'Mystery Fragment', desc:lore[i % lore.length], img:'', category:'lore' };
+  }
+
+  // grid creation
+  function createGrid(){
+    gridEl.innerHTML = '';
+    for (let i=0;i<TOTAL;i++){
+      const tile = document.createElement('div'); tile.className='tile'; tile.dataset.index = i;
+      if (i === PORTALS.hans || i === PORTALS.miki || i === PORTALS.yeshua) tile.dataset.portal = (i===PORTALS.hans ? 'hans' : (i===PORTALS.yeshua ? 'yeshua' : 'miki'));
+      else if (i % 2 === 0) { tile.dataset.type = 'character'; tile.dataset.charKey = CHARACTERS[(i/2)%CHARACTERS.length].key; } else tile.dataset.type = 'lore';
+      const mapping = mapTile(i);
+      const stub = document.createElement('div'); stub.className = 'stub'; stub.textContent = mapping.title;
+      tile.appendChild(stub);
+      if (completedTiles[i]) tile.classList.add('completed');
+      tile.addEventListener('click', ()=> onTileClick(i));
+      tile.style.opacity = 0; tile.style.transform = 'translateY(20px) scale(.98)';
+      setTimeout(()=>{ tile.style.opacity=1; tile.style.transform='translateY(0) scale(1)'; }, 80 + i*25);
+      gridEl.appendChild(tile);
+    }
+  }
+
+  function onTileClick(i){
+    const tile = document.querySelector(`.tile[data-index="${i}"]`);
+    const replayable = (i === PORTALS.miki);
+    if (completedTiles[i] && !replayable){ openModal(`<h2>Completed</h2><p>You already finished this square. Check the Codex.</p><div style="text-align:right;margin-top:12px"><button data-close="popup" class="btn">Close</button></div>`, { tileIndex:i, replayable:false, disableAutoClose:false }); return; }
+    if (tile.dataset.portal){
+      if (tile.dataset.portal === 'hans') openCharacterModal(i,'hans',{replayable:false});
+      if (tile.dataset.portal === 'miki') openCharacterModal(i,'miki',{replayable:true});
+      if (tile.dataset.portal === 'yeshua') openYeshuaModal(i);
+      return;
+    }
+    if (tile.dataset.type === 'character') openCharacterModal(i,tile.dataset.charKey,{replayable:false});
+    if (tile.dataset.type === 'lore') openLoreModal(i);
+  }
+
+  // Character modal with quiz
+  function openCharacterModal(tileIndex, key, {replayable=false} = {}){
+    const mapping = mapTile(tileIndex);
+    ensureCodexEntry(mapping.id, mapping.title, mapping.desc, mapping.img, mapping.category);
+    const char = CHARACTERS.find(c=>c.key===key);
+    const html = `<div class="row"><div class="left"><div class="bigPortrait">${esc(mapping.title)}</div></div><div class="right"><h2>${esc(mapping.title)}</h2><p>${esc(mapping.desc)}</p><p style="opacity:.9">Quiz: answer briefly below</p><div style="margin-top:8px;"><input id="quizInput" placeholder="Your answer..." style="padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);width:60%;background:transparent;color:#fff"> <button id="quizSubmit" class="btn">Submit</button></div>${char.music?`<div style="margin-top:10px"><button id="mikiPlayBtn" class="btn">Play/Pause</button> <a href="cafespiritpulse.mp3" download class="btn ghost" style="margin-left:8px">Download</a></div>`:''}<div style="text-align:right;margin-top:12px"><button data-close="popup" class="btn">Close</button></div></div></div>`;
+    openModal(html, { tileIndex, replayable, disableAutoClose:false, quizActive:true });
+
+    // hook quiz and music after small delay
+    setTimeout(()=> {
+      const submit = document.getElementById('quizSubmit'), input = document.getElementById('quizInput');
+      if (submit && input){
+        submit.onclick = () => {
+          const answer = (input.value||'').trim().toLowerCase();
+          const expected = (char && char.answer) ? char.answer.toLowerCase() : '';
+          const correct = expected && answer.includes(expected);
+          if (correct){
+            score += 10;
+            const badgeId = `badge_${char.key}`;
+            if (!badges.some(b=>b.id===badgeId)){
+              badges.push({ id:badgeId, title:`${char.name} Badge`, img:`placeholder_badge_${char.key}.png`, desc:`Badge for ${char.name}`, when:Date.now() });
+            }
+            finalizeCodexForTile(tileIndex);
+            saveAll();
+            openModal(`<h2>Correct!</h2><p>You earned 10 points and a badge (if new). Entry saved to Codex.</p><div style="text-align:right;margin-top:12px"><button data-close="popup" class="btn">Close</button></div>`, { tileIndex, replayable, disableAutoClose:false, quizActive:false });
+            const tileEl = document.querySelector(\`.tile[data-index="${tileIndex}"]\`); if (tileEl) tileEl.classList.add('completed');
+            completedTiles[tileIndex] = true; saveAll();
+            // animate badge
+            const newly = badges.filter(b=>b.id===badgeId); if (newly.length) { const b = newly[0]; const fly = document.createElement('div'); fly.className='flyBadge'; fly.textContent=b.title; document.body.appendChild(fly); setTimeout(()=>fly.remove(),2200); }
+          } else {
+            submit.textContent = 'Try again'; setTimeout(()=> submit.textContent = 'Submit', 1200);
+          }
+        };
+      }
+      const playBtn = document.getElementById('mikiPlayBtn');
+      if (playBtn) playBtn.onclick = ()=> { if (mikiTrack.paused){ mikiTrack.play().catch(()=>{}); videoContainer.style.display='block'; try{ video.play().catch(()=>{});}catch(e){} } else mikiTrack.pause(); };
+    }, 40);
+  }
+
+  function openLoreModal(tileIndex){
+    const mapping = mapTile(tileIndex); ensureCodexEntry(mapping.id,mapping.title,mapping.desc,mapping.img,mapping.category);
+    openModal(`<h2>${esc(mapping.title)}</h2><p>${esc(mapping.desc)}</p><div style="text-align:right;margin-top:12px"><button data-close="popup" class="btn">Close</button></div>`, { tileIndex, replayable:false, disableAutoClose:false, quizActive:false });
+  }
+
+  function openYeshuaModal(tileIndex){
+    ensureCodexEntry('yeshua','Yeshua','Soft ethereal presence & Romans 10:13','','portal');
+    openModal(`<h2 style="color:#ffeaae">Eternal Light</h2><p>You step into a soft ethereal glow. Romans: <em>"Whoever calls on the name of the Lord shall be saved."</em></p><div style="text-align:right;margin-top:12px"><button data-close="popup" class="btn">Return</button></div>`, { tileIndex, replayable:false, disableAutoClose:false, quizActive:false });
+  }
+
+  // codex UI
+  function openCodex(){
+    let html = `<h2>Codex</h2><div class="codex-list">`;
+    const entries = codex.slice().reverse();
+    if (entries.length === 0) html += `<div style="padding:12px">No entries yet — explore tiles to unlock them.</div>`;
+    entries.forEach(e => { html += `<div class="codex-item ${e.completed ? 'completed' : ''}">${e.img?`<img src="${esc(e.img)}">`:''}<div style="flex:1"><strong>${esc(e.title)}</strong><div style="opacity:.9">${esc(e.text)}</div></div><div style="min-width:90px;text-align:right">${e.completed?'<span style="color:#7cff7c;font-weight:700">Completed</span>':'<span style="color:#cfc7e8">Incomplete</span>'}</div></div>`; });
+    html += `</div><div style="text-align:right;margin-top:12px"><button data-close="popup" class="btn">Close</button></div>`;
+    openModal(html, { disableAutoClose:true });
+  }
+
+  // badge gallery
+  function openGallery(){
+    let html = `<h2>Badge Gallery</h2>`;
+    if (badges.length === 0) html += `<p style="padding:12px">No badges yet — earn them through quizzes and completing tiles.</p>`;
+    else { html += `<div class="galleryGrid">`; badges.forEach(b => html += `<div class="badgeSmall" data-id="${esc(b.id)}" title="${esc(b.title)}">${esc(b.title[0]||'B')}</div>`); html += `</div>`; }
+    html += `<div style="text-align:right;margin-top:12px"><button data-close="popup" class="btn">Close</button></div>`;
+    openModal(html, { disableAutoClose:true });
+    // attach preview handlers
+    setTimeout(()=> {
+      modalBox.querySelectorAll('.badgeSmall').forEach(el => el.addEventListener('click', () => {
+        const id = el.dataset.id; const b = badges.find(x=>x.id===id); if (!b) return;
+        const html2 = `<h2>${esc(b.title)}</h2><div style="display:flex;gap:12px;align-items:center"><div style="width:180px;height:180px;border-radius:12px;background:#221132;display:flex;align-items:center;justify-content:center;font-weight:700">${esc(b.title)}</div><div><p>${esc(b.desc)}</p><p style="opacity:.9">Unlocked: ${new Date(b.when).toLocaleString()}</p></div></div><div style="text-align:right;margin-top:12px"><button data-close="popup" class="btn">Close</button></div>`;
+        openModal(html2, { disableAutoClose:true });
+      }));
+    }, 40);
+  }
+
+  // delegated close via data-close
+  document.addEventListener('click', (e)=> { const b = e.target.closest('[data-close="popup"]'); if (b) { closeModal({ markCompleted:true }); saveAll(); } });
+
+  // link header buttons
+  codexBtn.addEventListener('click', openCodex);
+  galleryBtn.addEventListener('click', openGallery);
+
+  // initialize grid UI
+  createGrid();
+
+  // login glitch + WebAudio soft zap
+  function playSoftZap(){
+    try{
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(800, ctx.currentTime);
+      o.frequency.exponentialRampToValueAtTime(220, ctx.currentTime + 0.14);
+      g.gain.setValueAtTime(0.0001, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.08, ctx.currentTime + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.18);
+      o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + 0.18);
+    }catch(e){}
+  }
+
+  // glitch animation sequence (soft zap sound plays at start)
+  function runGlitchTransition(username){
+    // prepare glitch text
+    glitchText.dataset.text = `Welcome, ${username}`;
+    glitchText.textContent = `Welcome, ${username}`;
+    glitchWrap.style.display = 'flex';
+    glitchScan.style.opacity = '0';
+
+    playSoftZap(); // sound A (soft zap)
+
+    // animate CSS distortions via JS: simulate quick frames
+    const frames = [
+      { before: 'W3l6 ▼', scan:0.8, offset:-6 },
+      { before: 'W e l   3', scan:0.6, offset:6 },
+      { before: '*noise*', scan:1.0, offset:-12 },
+      { before: `Welcome, ${username}`, scan:0.0, offset:0 }
+    ];
+    let idx = 0;
+    function nextFrame(){
+      const f = frames[idx++];
+      glitchText.textContent = f.before;
+      // small RGB split via transform
+      glitchText.style.transform = `translateX(${f.offset}px)`;
+      glitchScan.style.opacity = String(f.scan);
+      if (idx < frames.length) setTimeout(nextFrame, 120);
+      else finishGlitch();
+    }
+    nextFrame();
+
+    function finishGlitch(){
+      // flash and drop out login
+      loginCard.style.filter = 'contrast(1.2) saturate(1.1)';
+      loginOverlay.style.transition = 'opacity .24s ease';
+      loginOverlay.style.opacity = '0';
+      setTimeout(()=> {
+        loginOverlay.style.display = 'none';
+        glitchWrap.style.display = 'none';
+        loginCard.style.filter = '';
+        // reveal grid with cascade animation
+        createGrid();
+      }, 260);
+    }
+  }
+
+  // Enter / Guest handlers (ensure they work)
+  enterBtn.addEventListener('click', ()=> {
+    const name = (userInput.value || '').trim();
+    if (!name) { alert('Please enter a name or click Guest'); return; }
+    runGlitchTransition(name);
+  });
+  guestBtn.addEventListener('click', ()=> { userInput.value = 'Guest'; enterBtn.click(); });
+
+  // OpenCodex and Gallery wired earlier; ensure initial HUD
+  updateHUD();
+
+  // Helper functions used above (redeclared here for scope safety)
+  function createGrid(){
+    gridEl.innerHTML = '';
+    for (let i=0;i<TOTAL;i++){
+      const tile = document.createElement('div'); tile.className='tile'; tile.dataset.index = i;
+      if (i === PORTALS.hans || i === PORTALS.miki || i === PORTALS.yeshua) tile.dataset.portal = (i===PORTALS.hans?'hans':(i===PORTALS.yeshua?'yeshua':'miki'));
+      else if (i % 2 === 0){ tile.dataset.type='character'; tile.dataset.charKey = CHARACTERS[(i/2)%CHARACTERS.length].key; } else tile.dataset.type='lore';
+      const mapping = mapTile(i);
+      const stub = document.createElement('div'); stub.className='stub'; stub.textContent = mapping.title;
+      tile.appendChild(stub);
+      if (completedTiles[i]) tile.classList.add('completed');
+      tile.addEventListener('click', ()=> onTileClick(i));
+      tile.style.opacity = 0; tile.style.transform = 'translateY(20px) scale(.98)';
+      setTimeout(()=> { tile.style.opacity = 1; tile.style.transform = 'translateY(0) scale(1)'; }, 80 + i*22);
+      gridEl.appendChild(tile);
+    }
+  }
+
+  function onTileClick(i){
+    const tile = document.querySelector(`.tile[data-index="${i}"]`);
+    const replayable = (i === PORTALS.miki);
+    if (completedTiles[i] && !replayable){
+      openModal(`<h2>Completed</h2><p>You already finished this tile. Check your Codex.</p><div style="text-align:right;margin-top:12px"><button data-close="popup" class="btn">Close</button></div>`, { tileIndex:i, replayable:false });
+      return;
+    }
+    if (tile.dataset.portal){
+      if (tile.dataset.portal === 'hans') openCharacterModal(i,'hans',{replayable:false});
+      if (tile.dataset.portal === 'miki') openCharacterModal(i,'miki',{replayable:true});
+      if (tile.dataset.portal === 'yeshua') openYeshuaModal(i);
+      return;
+    }
+    if (tile.dataset.type === 'character') openCharacterModal(i, tile.dataset.charKey, { replayable:false });
+    if (tile.dataset.type === 'lore') openLoreModal(i);
+  }
+
+  // character/lore implementations reused from above (kept concise)
+  function openCharacterModal(tileIndex,key,{replayable=false} = {}){
+    const mapping = mapTile(tileIndex); ensureCodexEntry(mapping.id,mapping.title,mapping.desc,mapping.img,mapping.category);
+    const char = CHARACTERS.find(c=>c.key===key);
+    const html = `<div class="row"><div class="left"><div class="bigPortrait">${esc(mapping.title)}</div></div><div class="right"><h2>${esc(mapping.title)}</h2><p>${esc(mapping.desc)}</p><p style="opacity:.9">Quiz: answer briefly below</p><div style="margin-top:8px"><input id="quizInput" placeholder="Your answer..." style="padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);width:60%;background:transparent;color:#fff"> <button id="quizSubmit" class="btn">Submit</button></div>${char.music?`<div style="margin-top:10px"><button id="mikiPlayBtn" class="btn">Play/Pause</button> <a href="cafespiritpulse.mp3" download class="btn ghost" style="margin-left:8px">Download</a></div>`:''}<div style="text-align:right;margin-top:12px"><button data-close="popup" class="btn">Close</button></div></div></div>`;
+    openModal(html,{ tileIndex,replayable,disableAutoClose:false,quizActive:true });
+    setTimeout(()=> {
+      const submit = document.getElementById('quizSubmit'), input = document.getElementById('quizInput');
+      if (submit && input){
+        submit.onclick = () => {
+          const answer = (input.value||'').trim().toLowerCase();
+          const expected = (char && char.answer) ? char.answer.toLowerCase() : '';
+          const correct = expected && answer.includes(expected);
+          if (correct){
+            score += 10;
+            const badgeId = `badge_${char.key}`;
+            if (!badges.some(b=>b.id===badgeId)) { badges.push({ id:badgeId, title:`${char.name} Badge`, img:`placeholder_badge_${char.key}.png`, desc:`Badge for ${char.name}`, when:Date.now() }); }
+            finalizeCodexForTile(tileIndex);
+            saveAll();
+            openModal(`<h2>Correct!</h2><p>You earned 10 points and a badge (if new). Entry saved to Codex.</p><div style="text-align:right;margin-top:12px"><button data-close="popup" class="btn">Close</button></div>`, { tileIndex, replayable, disableAutoClose:false, quizActive:false });
+            const tileEl = document.querySelector(`.tile[data-index="${tileIndex}"]`); if (tileEl) tileEl.classList.add('completed');
+            completedTiles[tileIndex]=true; saveAll();
+            const newly = badges.filter(b=>b.id===badgeId); if (newly.length) { const b = newly[0]; const fly = document.createElement('div'); fly.className='flyBadge'; fly.textContent=b.title; document.body.appendChild(fly); setTimeout(()=>fly.remove(),2200); }
+          } else {
+            submit.textContent = 'Try again'; setTimeout(()=> submit.textContent='Submit',1200);
+          }
+        };
+      }
+      const playBtn = document.getElementById('mikiPlayBtn'); if (playBtn) playBtn.onclick = ()=> { if (mikiTrack.paused){ mikiTrack.play().catch(()=>{}); videoContainer.style.display='block'; try{ video.play().catch(()=>{});}catch(e){} } else mikiTrack.pause(); };
+    },40);
+  }
+
+  function openLoreModal(tileIndex){
+    const mapping = mapTile(tileIndex); ensureCodexEntry(mapping.id,mapping.title,mapping.desc,mapping.img,mapping.category);
+    openModal(`<h2>${esc(mapping.title)}</h2><p>${esc(mapping.desc)}</p><div style="text-align:right;margin-top:12px"><button data-close="popup" class="btn">Close</button></div>`, { tileIndex, replayable:false, disableAutoClose:false, quizActive:false });
+  }
+  function openYeshuaModal(tileIndex){ ensureCodexEntry('yeshua','Yeshua','Soft ethereal presence & Romans (Romans 10:13)','', 'portal'); openModal(`<h2 style="color:#ffeaae">Eternal Light</h2><p>You step into a soft ethereal glow. Romans: <em>"Whoever calls on the name of the Lord shall be saved."</em></p><div style="text-align:right;margin-top:12px"><button data-close="popup" class="btn">Return</button></div>`,{ tileIndex, replayable:false, disableAutoClose:false, quizActive:false }); }
+
+  function openCodex(){ let html=`<h2>Codex</h2><div class="codex-list">`; const entries = codex.slice().reverse(); if (entries.length===0) html += `<div style="padding:12px">No entries yet — explore tiles to unlock them.</div>`; entries.forEach(e=> html+=`<div class="codex-item ${e.completed?'completed':''}">${e.img?`<img src="${esc(e.img)}">`:''}<div style="flex:1"><strong>${esc(e.title)}</strong><div style="opacity:.9">${esc(e.text)}</div></div><div style="min-width:90px;text-align:right">${e.completed?'<span style="color:#7cff7c;font-weight:700">Completed</span>':'<span style="color:#cfc7e8">Incomplete</span>'}</div></div>`); html += `</div><div style="text-align:right;margin-top:12px"><button data-close="popup" class="btn">Close</button></div>`; openModal(html,{ disableAutoClose:true }); }
+  function openGallery(){ let html=`<h2>Badge Gallery</h2>`; if (badges.length===0) html+=`<p style="padding:12px">No badges yet.</p>`; else { html+=`<div class="galleryGrid">`; badges.forEach(b=> html+=`<div class="badgeSmall" data-id="${esc(b.id)}" title="${esc(b.title)}">${esc(b.title[0]||'B')}</div>`); html+=`</div>`; } html+=`<div style="text-align:right;margin-top:12px"><button data-close="popup" class="btn">Close</button></div>`; openModal(html,{ disableAutoClose:true }); setTimeout(()=> { modalBox.querySelectorAll('.badgeSmall').forEach(el=> el.addEventListener('click', ()=> { const id=el.dataset.id; const b=badges.find(x=>x.id===id); if(!b) return; const content = `<h2>${esc(b.title)}</h2><div style="display:flex;gap:12px;align-items:center"><div style="width:180px;height:180px;border-radius:12px;background:#221132;display:flex;align-items:center;justify-content:center;font-weight:700">${esc(b.title)}</div><div><p>${esc(b.desc)}</p><p style="opacity:.9">Unlocked: ${new Date(b.when).toLocaleString()}</p></div></div><div style="text-align:right;margin-top:12px"><button data-close="popup" class="btn">Close</button></div>`; openModal(content,{ disableAutoClose:true }); })); },40); }
+
+  // delegation for close
+  document.addEventListener('click', (e) => { const b = e.target.closest('[data-close="popup"]'); if (b) { closeModal({markCompleted:true}); saveAll(); } });
+
+  // link header
+  codexBtn.addEventListener('click', openCodex);
+  galleryBtn.addEventListener('click', openGallery);
+
+  // utility
+  function esc(s){ return String(s||'').replace(/[&<>"'`]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;'}[m])); }
+  function ensureCodexEntry(id,title,text,img='',category='general'){ if (!codex.some(e=>e.id===id)){ codex.push({ id,title,text,img,category,completed:false,when:Date.now() }); saveAll(); animateCodexUnlock(); return true } return false }
+  function animateCodexUnlock(){ const fly=document.createElement('div'); fly.className='flyBadge'; fly.textContent='Codex +1'; document.body.appendChild(fly); setTimeout(()=> fly.remove(),1800); }
+
+  function finalizeCodexForTile(tileIndex){ const mapping = mapTile(tileIndex); if (!mapping) return; const idx = codex.findIndex(e=>e.id===mapping.id); if (idx>=0){ codex[idx].completed = true; codex[idx].when = Date.now(); saveAll(); } else { codex.push({ id:mapping.id,title:mapping.title,text:mapping.desc,img:mapping.img||'',category:mapping.category||'character',completed:true,when:Date.now()}); saveAll(); } }
+
+  function mapTile(i){
+    if (i===PORTALS.hans) return { id:'portal_hans', title:'Hans Portal', desc:'Hans — tea & snark.', img:'placeholder_hans.png', category:'portal' };
+    if (i===PORTALS.miki) return { id:'portal_miki', title:'Miki Portal', desc:'Miki — music & portals.', img:'placeholder_miki.png', category:'portal' };
+    if (i===PORTALS.yeshua) return { id:'portal_yeshua', title:'Yeshua', desc:'Soft ethereal presence & Romans (Romans 10:13).', img:'', category:'portal' };
+    if (i%2===0){ const c = CHARACTERS[(i/2)%CHARACTERS.length]; return { id:`char_${c.key}_${i}`, title:c.name, desc:c.desc, img:c.img, category:'character', key:c.key, answer:c.answer }; }
+    const lore = ['Mini-Paris was stitched from moonlight and cobblestone.','A faded lab token reads: "Atelier — experimental wing."','The Café floor sometimes remembers old songs.','A rat leaves a tiny key behind — Chari notices it.','Milo hums to the herbs; they unfurl like memories.'];
+    return { id:`lore_${i}`, title:'Mystery Fragment', desc:lore[i % lore.length], img:'', category:'lore' };
+  }
+
+  // Start: create grid but keep login overlay visible
+  createGrid();
+  updateHUD();
+
+  // Expose saveAll for debugging
+  window.saveAll = saveAll;
+
+}); // DOMContentLoaded end
+</script>
+</body>
+</html>
