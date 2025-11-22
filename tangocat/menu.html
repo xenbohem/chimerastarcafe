@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PacCat Menu</title>
+<style>
+  body { margin:0; padding:0; background:#111; display:flex; flex-direction:column; align-items:center; font-family:'Courier New', monospace; }
+  #game { position:relative; width:440px; height:650px; background:#222; border:4px solid #9900ff; box-shadow:0 0 20px #9900ff; margin-top:20px; overflow:hidden; }
+  .cell { width:40px; height:40px; position:absolute; box-sizing:border-box; }
+  .wall { background:#222; border:2px solid #9900ff; z-index:1; }
+  .kibble { width:8px; height:8px; background:yellow; border-radius:50%; position:absolute; z-index:3; left:16px; top:16px; }
+  .ghost { position:absolute; width:40px; height:40px; border-radius:50% 50% 0 0; background:violet; display:flex; align-items:center; justify-content:center; font-size:18px; color:white; cursor:pointer; z-index:4; }
+  .ghost.selected { outline:2px dashed #fff; background:#ff69b4; }
+  .label { position:absolute; top:42px; color:#fff; font-size:12px; text-align:center; width:100%; display:none; }
+  .cat { position:absolute; width:40px; height:40px; background:grey; border-radius:50%; box-shadow:0 0 10px #fff; z-index:5; }
+  .cat.up { background:url('https://3society.neocities.org/PACCAT_TANGO/images.html/backfrontcat.jpg') center/contain no-repeat; }
+  .cat.down { background:url('https://3society.neocities.org/PACCAT_TANGO/images.html/facefrontblackcat.png') center/contain no-repeat; }
+  .cat.left { background:url('https://3society.neocities.org/PACCAT_TANGO/images.html/paccat.jpg') center/contain no-repeat; }
+  .cat.right { background:url('https://3society.neocities.org/PACCAT_TANGO/images.html/pactuxedocat.jpg') center/contain no-repeat; }
+  #scoreboard { color:#fff; margin-top:10px; }
+  #splash { position:absolute; width:100%; height:100%; background:rgba(0,0,0,0.8); color:white; z-index:100;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+  #startBtn { padding:10px 20px; margin-top:20px; background:#9900ff; color:#fff; border:none; cursor:pointer; }
+  #controls { margin-top:15px; display:flex; justify-content:center; gap:10px; }
+  #controls button { font-size:24px; width:60px; height:60px; background:#9900ff; color:white; border:none; border-radius:8px; }
+
+  /* New for speech + glow */
+  .speech {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #fff;
+    color: #000;
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease-in-out;
+    z-index: 10;
+  }
+  .ghost.glow {
+    box-shadow: 0 0 10px #fff;
+    transition: box-shadow 0.2s ease;
+  }
+</style>
+</head>
+<body>
+<div id="scoreboard">Score: 0</div>
+<div id="game">
+  <div id="splash">
+    <h1>🟣 PacCat Menu</h1>
+    <p>Eat all the kibble to unlock the menu ghosts!</p>
+    <button id="startBtn">Start Game</button>
+  </div>
+</div>
+<div id="controls">
+  <button data-dir="up">▲</button>
+  <button data-dir="left">◀</button>
+  <button data-dir="down">▼</button>
+  <button data-dir="right">▶</button>
+</div>
+
+<audio id="bgMusic" src="https://www.orangefreesounds.com/wp-content/uploads/2020/07/Tango-music-loop-about-125-bpm.mp3" loop></audio>
+
+<script>
+  const game = document.getElementById('game'),
+        scoreboard = document.getElementById('scoreboard'),
+        splash = document.getElementById('splash'),
+        music = document.getElementById('bgMusic'),
+        CELL=40;
+
+  const maze = [
+    [1,1,1,1,1,1,1,1,1,1,1],
+    [1,0,0,0,0,0,0,0,0,0,1],
+    [1,0,1,1,1,1,1,1,1,0,1],
+    [1,0,1,0,0,0,0,0,1,0,1],
+    [1,0,1,0,1,1,1,0,1,0,1],
+    [1,0,1,0,1,0,1,0,1,0,1],
+    [1,0,0,0,1,0,1,0,0,0,1],
+    [1,1,1,0,1,0,1,1,1,0,1],
+    [1,0,0,0,0,0,0,0,1,0,1],
+    [1,0,1,1,1,1,1,0,1,0,1],
+    [1,0,1,0,0,0,1,0,1,0,1],
+    [1,0,1,0,1,0,1,0,1,0,1],
+    [1,0,0,0,1,0,0,0,1,0,1],
+    [1,0,1,1,1,1,1,1,1,0,1],
+    [1,0,0,0,0,0,0,0,0,0,1],
+    [1,1,1,1,1,1,1,1,1,1,1],
+  ];
+
+  let cat, catR=1, catC=1, score=0, total=0, completed=false;
+  let ghosts=[], ghostInt, ghostSp=700, sel=null;
+
+  const reactions = ["Follow me!", "Ouch!", "Hey!", "Chomp!", "Yikes!", "Rawr!", "Watch it!"];
+
+  function drawMaze(){
+    maze.forEach((row,r)=>{
+      row.forEach((c,cx)=>{
+        const cell=document.createElement('div');
+        cell.className='cell'+(c? ' wall':'');
+        cell.style.top=r*CELL+'px'; cell.style.left=cx*CELL+'px';
+        game.appendChild(cell);
+        if(!c){
+          const kib=document.createElement('div');
+          kib.className='kibble'; kib.dataset.r=r; kib.dataset.c=cx;
+          kib.style.top=r*CELL+'px'; kib.style.left=cx*CELL+'px';
+          game.appendChild(kib); total++;
+        }
+      });
+    });
+  }
+
+  function spawnCat(){
+    cat=document.createElement('div');
+    cat.className='cat down'; cat.style.top=catR*CELL+'px';
+    cat.style.left=catC*CELL+'px'; game.appendChild(cat);
+  }
+
+  function updateSprite(dir){ cat.className='cat '+dir; }
+
+  function eatK(r,c){
+    const kib=document.querySelector(`.kibble[data-r="${r}"][data-c="${c}"]`);
+    if(kib){
+      kib.remove(); score++; scoreboard.textContent='Score: '+score;
+      if(score===total){
+        completed=true;
+        music.pause();
+        clearInterval(ghostInt);
+        ghostSp=1800; startGhosts();
+        ghosts.forEach(g=>g.querySelector('.label').style.display='block');
+      }
+    }
+  }
+
+  function can(r,c){ return maze[r]&&maze[r][c]===0; }
+
+  function moveCat(dir){
+    let nr=catR,nc=catC;
+    updateSprite(dir);
+    if(dir==='up')nr--; if(dir==='down')nr++; if(dir==='left')nc--; if(dir==='right')nc++;
+    if(can(nr,nc)){
+      catR=nr; catC=nc;
+      cat.style.top=nr*CELL+'px'; cat.style.left=nc*CELL+'px';
+      eatK(nr,nc);
+      checkGhostBump(nr, nc); // new
+    }
+  }
+
+  function checkGhostBump(r, c) {
+    ghosts.forEach(g => {
+      if (+g.dataset.r === r && +g.dataset.c === c) {
+        // Glow
+        g.classList.add('glow');
+        setTimeout(() => g.classList.remove('glow'), 400);
+
+        // Speech bubble
+        const say = document.createElement('div');
+        say.className = 'speech';
+        say.textContent = reactions[Math.floor(Math.random() * reactions.length)];
+        g.appendChild(say);
+        setTimeout(() => {
+          say.style.opacity = 1;
+          setTimeout(() => {
+            say.style.opacity = 0;
+            setTimeout(() => say.remove(), 300);
+          }, 1000);
+        }, 10);
+        
+        // Optional: beep sound
+        new Audio('https://freesound.org/data/previews/66/66717_931655-lq.mp3').play();
+      }
+    });
+  }
+
+  function handleKey(e){
+    if(e.key.startsWith('Arrow')) moveCat(e.key.replace('Arrow','').toLowerCase());
+  }
+
+  function spawnGhosts(){
+    const links=['contact.html','subscribe.html','channelx3n.html','sketch.html','ourmission.html'];
+    const lbls=['Contact','Subscribe','Channelx3n','Sketch','Mission'];
+    const icons=['📧','📬','📺','❓','📖'];
+    const positions=[[1,9],[5,9],[10,9],[10,1],[13,5]];
+    const cols=['#e0bbff','#d29eff','#b266ff','#9933ff','#8000ff'];
+    positions.forEach((pos,i)=>{
+      const g=document.createElement('div');
+      g.className='ghost';g.style.background=cols[i];
+      g.dataset.r=pos[0];g.dataset.c=pos[1];g.dataset.link=links[i];
+      g.style.top=pos[0]*CELL+'px';g.style.left=pos[1]*CELL+'px';
+      g.textContent=icons[i];
+      const lb=document.createElement('div');lb.className='label';lb.textContent=lbls[i];
+      g.appendChild(lb);
+      g.addEventListener('click',()=>{
+        if(!completed)return;
+        if(sel===g) window.open(g.dataset.link,'_blank');
+        else{ if(sel) sel.classList.remove('selected');
+          g.classList.add('selected'); sel=g;
+        }
+      });
+      ghosts.push(g); game.appendChild(g);
+    });
+  }
+
+  function moveGhosts(){
+    ghosts.forEach(g=>{
+      let r=+g.dataset.r, c=+g.dataset.c, opts=[];
+      if(can(r-1,c))opts.push([-1,0]);
+      if(can(r+1,c))opts.push([1,0]);
+      if(can(r,c-1))opts.push([0,-1]);
+      if(can(r,c+1))opts.push([0,1]);
+      if(!opts.length)return;
+      const [dr,dc]=opts[Math.floor(Math.random()*opts.length)];
+      r+=dr; c+=dc;
+      g.style.top=r*CELL+'px';g.style.left=c*CELL+'px';
+      g.dataset.r=r; g.dataset.c=c;
+    });
+  }
+
+  function startGhosts(){ ghostInt = setInterval(moveGhosts, ghostSp); }
+
+  document.getElementById('startBtn').onclick = () => {
+    splash.style.display='none';
+    music.play();
+    drawMaze(); spawnCat(); spawnGhosts(); startGhosts();
+    document.addEventListener('keydown', handleKey);
+  };
+
+  document.querySelectorAll('#controls button').forEach(b => {
+    b.addEventListener('touchstart', e => {
+      e.preventDefault(); moveCat(b.dataset.dir);
+    });
+  });
+</script>
+</body>
+</html>
