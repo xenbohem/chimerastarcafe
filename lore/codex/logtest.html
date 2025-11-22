@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Login Test</title>
+<style>
+  body { background:#111; color:#fff; font-family:sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; }
+  .loginCard { background:#222; padding:20px; border-radius:12px; text-align:center; }
+  input { padding:8px 12px; border-radius:6px; border:1px solid #555; background:#111; color:#fff; width:80%; }
+  button { padding:8px 12px; margin-top:10px; border-radius:6px; border:none; cursor:pointer; background:#7a4bff; color:#fff; }
+</style>
+</head>
+<body>
+
+<div class="loginCard">
+  <h2>Enter Username</h2>
+  <input id="usernameInput" placeholder="Your name"/>
+  <div>
+    <button id="loginBtn">Enter</button>
+  </div>
+  <p id="greeting"></p>
+</div>
+
+<script>
+  const usernameInput = document.getElementById('usernameInput');
+  const loginBtn = document.getElementById('loginBtn');
+  const greeting = document.getElementById('greeting');
+
+  loginBtn.addEventListener('click', () => {
+    const name = usernameInput.value.trim();
+    if (!name) { 
+      alert("Please type a username"); 
+      return; 
+    }
+    localStorage.setItem('username', name);  // Save username
+    greeting.textContent = `Welcome, ${name}!`; 
+    usernameInput.value = '';
+    // Here you can hide login overlay and show main app
+  });
+
+  // Optional: allow pressing Enter to submit
+  usernameInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') loginBtn.click();
+  });
+</script>
+
+</body>
+</html>
