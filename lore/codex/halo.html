@@ -3,74 +3,123 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Chimera Café — Mini-Paris (Single File, Optimized)</title>
+<title>Chimera Café — Mini-Paris (Halo Upgrade)</title>
 <style>
 :root{
-  --bg:#0c0c12; --panel:#12061a; --accent:#7a4bff; --accent-2:#9a6fff;
-  --completed:#8a6be6; --muted:#cfc7e8; --codex-width:360px; --countdown-circ:440;
+  --bg:#0c0c12;
+  --panel:#12061a;
+  --accent:#7a4bff;
+  --accent-2:#9a6fff;
+  --completed:#8a6be6;
+  --muted:#cfc7e8;
+  --codex-width:360px;
+  --countdown-circ:440;
 }
 *{box-sizing:border-box}
-body{margin:0; min-height:100vh; background:linear-gradient(180deg,var(--bg),#161226 86%);
-color:#fff; font-family:Inter,"Poppins",system-ui,-apple-system; display:flex; align-items:center; justify-content:center; padding:20px;}
+body{
+  margin:0; min-height:100vh; background:linear-gradient(180deg,var(--bg), #161226 86%);
+  color:#fff; font-family:Inter, "Poppins", system-ui, -apple-system; -webkit-font-smoothing:antialiased;
+  display:flex; align-items:center; justify-content:center; padding:20px;
+}
+
+/* Wrap + header */
 .wrap{ width:min(1200px,96vw); max-width:1200px; position:relative; }
 header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:12px; }
 h1{ margin:0; color:var(--muted); font-weight:600; font-size:1.05rem; }
-.iconBtn{position:fixed;width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;
-background:linear-gradient(180deg,rgba(122,75,255,0.16),rgba(122,75,255,0.08));color:white;border:1px solid rgba(255,255,255,0.04);
-cursor:pointer;z-index:16000;box-shadow:0 8px 30px rgba(122,75,255,0.08);}
-#restartBtn{left:16px;top:16px;} #codexToggle{right:16px;top:16px;}
+
+/* Floating icons */
+.iconBtn{
+  position:fixed; width:46px; height:46px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(180deg, rgba(122,75,255,0.16), rgba(122,75,255,0.08)); color:white; border:1px solid rgba(255,255,255,0.04);
+  cursor:pointer; z-index:16000; box-shadow:0 8px 30px rgba(122,75,255,0.08);
+}
+#restartBtn{ left:16px; top:16px; }
+#codexToggle{ right:16px; top:16px; }
+
+/* HUD */
 .hud{ display:flex; gap:12px; align-items:center; color:var(--muted); font-weight:600; }
+
+/* GRID */
 #grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:10px; width:min(84vmin,900px); aspect-ratio:1/1; perspective:1000px; }
-.tile{ background:linear-gradient(180deg,#1b1622,#181022); border-radius:12px; display:flex; align-items:center; justify-content:center;
-transition:transform .28s, box-shadow .28s, background .28s, opacity .28s; cursor:pointer; position:relative; overflow:hidden;
-box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02); min-height:0;}
-.tile:hover{ transform: translateY(-6px) scale(1.03); box-shadow: 0 18px 60px rgba(122,75,255,0.08);}
-.stub{ width:82%; height:82%; border-radius:8px; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-display:flex; align-items:center; justify-content:center; font-family:Georgia,serif; font-weight:700; color:#fff; text-align:center; padding:8px; }
+.tile{
+  background:linear-gradient(180deg,#1b1622,#181022); border-radius:12px; display:flex; align-items:center; justify-content:center;
+  transition:transform .28s, box-shadow .28s, background .28s, opacity .28s; cursor:pointer; position:relative; overflow:hidden;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
+  min-height:0;
+}
+.tile:hover{ transform: translateY(-6px) scale(1.03); box-shadow: 0 18px 60px rgba(122,75,255,0.08); }
+.stub{ width:82%; height:82%; border-radius:8px; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); display:flex; align-items:center; justify-content:center; font-family:Georgia,serif; font-weight:700; color:#fff; text-align:center; padding:8px; }
 .tile.completed{ background: linear-gradient(180deg,var(--completed), #6f49d9); box-shadow:0 20px 50px rgba(111,73,217,0.18); transform:none; animation:completedPulse .9s ease; }
-@keyframes completedPulse{0%{ transform:scale(1.02);}50%{ transform:scale(1);}100%{ transform:scale(1.01);}}
-.tile.portal.yeshua::after{ content:""; position:absolute; inset:0; pointer-events:none; box-shadow: inset 0 0 40px rgba(255,240,200,0.06), 0 8px 40px rgba(200,160,255,0.03); border-radius:12px; }
+@keyframes completedPulse{ 0%{ transform:scale(1.02);} 50%{ transform:scale(1);} 100%{ transform:scale(1.01);} }
+
+/* portal halo ring */
+.portal { position: relative; overflow: visible; }
+.portal .haloRing {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  width: calc(100% + 12px);
+  height: calc(100% + 12px);
+  pointer-events: none;
+}
+.portal .haloRing svg { transform: rotate(-90deg); }
+.portal .haloRing circle {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 4;
+  stroke-dasharray: 440;
+  stroke-dashoffset: 440;
+  filter: drop-shadow(0 0 6px var(--accent)) drop-shadow(0 0 12px var(--accent-2));
+  animation: pulseGlow 2s infinite alternate;
+}
+@keyframes pulseGlow{ 0%{ opacity:0.6;} 100%{ opacity:1;} }
+
+/* overlay & modal */
 #overlay{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.6); z-index:15000; }
 #overlay.active{ display:flex; }
 .modal{ width:min(920px,94%); max-height:86vh; overflow:auto; background:linear-gradient(180deg,#110617,#1a0f2b); padding:18px; border-radius:12px; box-shadow:0 20px 80px rgba(0,0,0,0.6); color:#fff; position:relative; }
-.row{ display:flex; gap:14px; align-items:flex-start; }
-.left{ width:140px; flex:0 0 140px; }
-.bigPortrait{ width:140px; height:140px; border-radius:10px; background:#221132; display:flex; align-items:center; justify-content:center; font-family:Georgia,serif; font-weight:700; }
-.countdownWrap{ position:absolute; right:18px; top:18px; width:70px; height:70px; z-index:2000; pointer-events:none; display:flex; align-items:center; justify-content:center; }
-.countdownSVG{ width:86%; height:86%; transform:rotate(-90deg); }
-.countdownCircle{ fill:none; stroke:rgba(255,255,255,0.03); stroke-width:6; }
-.countdownRing{ fill:none; stroke:var(--accent); stroke-width:6; stroke-linecap:round; stroke-dasharray: var(--countdown-circ); stroke-dashoffset: 0; }
-.countdownLabel{ position:absolute; right:28px; top:26px; font-size:12px; color:var(--muted); pointer-events:none; }
-#codexPanel{ position:fixed; right:0; top:0; height:100vh; width:var(--codex-width); background:linear-gradient(180deg,#1b0b2f,#241235); box-shadow:-20px 0 60px rgba(0,0,0,0.6);
-transform:translateX(100%); transition:transform .45s cubic-bezier(.2,.9,.25,1); z-index:17000; padding:12px; overflow:auto; }
+
+/* codex drawer */
+#codexPanel{
+  position:fixed; right:0; top:0; height:100vh; width:var(--codex-width); background:linear-gradient(180deg,#1b0b2f,#241235); box-shadow:-20px 0 60px rgba(0,0,0,0.6);
+  transform:translateX(100%); transition:transform .45s cubic-bezier(.2,.9,.25,1); z-index:17000; padding:12px; overflow:auto;
+}
 #codexPanel.open{ transform:translateX(0); }
 .codex-header{ display:flex; justify-content:space-between; align-items:center; gap:12px; }
 .codex-list{ margin-top:12px; display:flex; flex-direction:column; gap:8px; }
 .codex-item{ padding:10px; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:8px; display:flex; gap:12px; align-items:center; }
 .codex-item.completed{ border-left:4px solid #7cff7c; opacity:0.95; }
 .codex-item img{ width:64px; height:64px; border-radius:8px; }
+
+/* badges */
 .badge-gallery{ margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; }
+
+/* restart button */
 #restartBtn{ display:flex; align-items:center; justify-content:center; }
-@media (max-width:900px){ #codexPanel{ width:86vw; } .left{ display:none; } .bigPortrait{ width:100%; height:120px; margin-bottom:8px; } }
+
+/* responsive */
+@media (max-width:900px){
+  #codexPanel{ width:86vw; }
+}
 </style>
 </head>
 <body>
 <div class="wrap" aria-live="polite">
-  <header>
-    <h1>Comfort Café — Mini-Paris</h1>
-    <div style="display:flex;gap:12px;align-items:center;">
-      <div class="hud"><div id="scoreDisplay">Score: 0</div><div id="badgeCount" style="opacity:0.9">Badges: 0</div></div>
-    </div>
-  </header>
-  <main><div id="grid" aria-label="Chimera grid"></div></main>
+<header>
+  <h1>Comfort Café — Mini-Paris</h1>
+  <div class="hud"><div id="scoreDisplay">Score:0</div><div id="badgeCount">Badges:0</div></div>
+</header>
+<main><div id="grid" aria-label="Chimera grid"></div></main>
 </div>
+
 <div id="restartBtn" class="iconBtn" title="Restart progress">↻</div>
 <div id="codexToggle" class="iconBtn" title="Open Codex">📖</div>
 
+<!-- login -->
 <div id="loginOverlay" role="dialog" aria-modal="true" style="display:flex; align-items:center; justify-content:center; inset:0; position:fixed; z-index:18000; background:linear-gradient(180deg, rgba(0,0,0,0.86), rgba(0,0,0,0.9));">
   <div class="loginCard" style="width:400px; background:linear-gradient(180deg,#1b0f2b,#241235); padding:22px; border-radius:12px; text-align:center; box-shadow:0 40px 120px rgba(0,0,0,0.6);">
-    <h2 style="font-family:Georgia, serif; margin:0 0 6px 0;">Enter the Café</h2>
-    <input id="usernameInput" placeholder="Your name (or Guest)" style="width:88%; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.06); background:rgba(0,0,0,0.08); color:#fff;"/>
+    <h2>Enter the Café</h2>
+    <input id="usernameInput" placeholder="Your name (or Guest)" style="width:88%; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.06); background:rgba(0,0,0,0.08); color:#fff"/>
     <div style="margin-top:12px; display:flex; gap:8px; justify-content:center;">
       <button id="loginEnterBtn" class="btn">Enter</button>
       <button id="loginGuestBtn" class="btn ghost">Guest</button>
@@ -79,23 +128,22 @@ transform:translateX(100%); transition:transform .45s cubic-bezier(.2,.9,.25,1);
   </div>
 </div>
 
-<div id="overlay" role="dialog" aria-hidden="true"><div class="modal" id="modalBox" role="document"></div></div>
-
+<div id="overlay" role="dialog" aria-hidden="true"><div class="modal" id="modalBox"></div></div>
 <aside id="codexPanel" aria-hidden="true" aria-label="Codex drawer">
   <div class="codex-header">
-    <h3 style="margin:0;">Codex</h3>
-    <div style="display:flex;gap:8px;"><button id="closeCodex" class="btn ghost">Close</button></div>
+    <h3>Codex</h3>
+    <div><button id="closeCodex" class="btn ghost">Close</button></div>
   </div>
   <div class="codex-list" id="codexList"></div>
   <hr style="opacity:0.06;margin:12px 0;">
   <div><strong>Badges</strong></div>
   <div class="badge-gallery" id="badgeGallery"></div>
 </aside>
-
 <audio id="mikiAudio" src="cafespiritpulse.mp3"></audio>
 
 <script>
-document.addEventListener('DOMContentLoaded', ()=>{
+document.addEventListener('DOMContentLoaded',()=>{
+
 const grid=document.getElementById('grid');
 const loginOverlay=document.getElementById('loginOverlay');
 const usernameInput=document.getElementById('usernameInput');
@@ -112,96 +160,88 @@ const restartBtn=document.getElementById('restartBtn');
 const mikiAudio=document.getElementById('mikiAudio');
 const scoreDisplay=document.getElementById('scoreDisplay');
 const badgeCount=document.getElementById('badgeCount');
-const GRID_SIZE=7; const TOTAL=GRID_SIZE*GRID_SIZE; const AUTO_CLOSE_MS=25000; const COUNTDOWN_CIRC=440;
 
-const STORAGE={ CODEX:'chimera_codex_vBplus', COMPLETED:'chimera_completed_vBplus', SCORE:'chimera_score_vBplus', BADGES:'chimera_badges_vBplus', USER:'chimera_user_vBplus'};
+const GRID_SIZE=7;
+const TOTAL=GRID_SIZE*GRID_SIZE;
+const AUTO_CLOSE_MS=25000;
 
-let codex=JSON.parse(localStorage.getItem(STORAGE.CODEX)||'[]');
-let completed=JSON.parse(localStorage.getItem(STORAGE.COMPLETED)||'{}');
-let score=Number(localStorage.getItem(STORAGE.SCORE)||0);
-let badges=JSON.parse(localStorage.getItem(STORAGE.BADGES)||'[]');
-let username=localStorage.getItem(STORAGE.USER)||'';
+let completed=JSON.parse(localStorage.getItem('chimera_completed_vBplus')||'{}');
+let codex=JSON.parse(localStorage.getItem('chimera_codex_vBplus')||'[]');
+let badges=JSON.parse(localStorage.getItem('chimera_badges_vBplus')||'[]');
+let score=Number(localStorage.getItem('chimera_score_vBplus')||0);
+let username=localStorage.getItem('chimera_user_vBplus')||'';
 
-function updateHUD(){scoreDisplay.textContent=`Score: ${score}`; badgeCount.textContent=`Badges: ${badges.length}`;}
-updateHUD();
+scoreDisplay.textContent=`Score: ${score}`;
+badgeCount.textContent=`Badges: ${badges.length}`;
 
-const CHARACTERS={
-star:{key:'star',name:'Star',img:'placeholder_star.png',answer:'freedom'},
-hans:{key:'hans',name:'Hans',img:'placeholder_hans.png',answer:'mini-paris'},
-chari:{key:'chari',name:'Chari',img:'placeholder_chari.png',answer:'yeshua'},
-milo:{key:'milo',name:'Milo',img:'placeholder_milo.png',answer:'gardener'},
-miki:{key:'miki',name:'Miki',img:'placeholder_miki.png',answer:'lab',music:true}
-};
-
+const CHARACTERS={star:{key:'star',name:'Star',img:'placeholder_star.png',answer:'freedom'},hans:{key:'hans',name:'Hans',img:'placeholder_hans.png',answer:'mini-paris'},chari:{key:'chari',name:'Chari',img:'placeholder_chari.png',answer:'yeshua'},milo:{key:'milo',name:'Milo',img:'placeholder_milo.png',answer:'gardener'},miki:{key:'miki',name:'Miki',img:'placeholder_miki.png',answer:'lab',music:true}};
 const PORTALS={hans:6,yeshua:20,miki:42};
-const esc=s=>String(s||'').replace(/[&<>"'`]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;'}[m]));
 
-function saveAll(){ localStorage.setItem(STORAGE.CODEX,JSON.stringify(codex)); localStorage.setItem(STORAGE.COMPLETED,JSON.stringify(completed)); localStorage.setItem(STORAGE.SCORE,String(score)); localStorage.setItem(STORAGE.BADGES,JSON.stringify(badges)); localStorage.setItem(STORAGE.USER,username); updateHUD(); }
+function esc(s){return String(s||'').replace(/[&<>"'`]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;'}[m]));}
+
+function saveAll(){
+  localStorage.setItem('chimera_codex_vBplus',JSON.stringify(codex));
+  localStorage.setItem('chimera_completed_vBplus',JSON.stringify(completed));
+  localStorage.setItem('chimera_score_vBplus',String(score));
+  localStorage.setItem('chimera_badges_vBplus',JSON.stringify(badges));
+  localStorage.setItem('chimera_user_vBplus',username);
+}
 
 function mapTile(i){
-if(i===PORTALS.hans)return {type:'portal',id:'portal_hans',title:'Hans Portal',desc:'Hans — tea & snark.',img:CHARACTERS.hans.img};
-if(i===PORTALS.miki)return {type:'portal',id:'portal_miki',title:'Miki Portal',desc:'Miki — music & portals.',img:CHARACTERS.miki.img};
-if(i===PORTALS.yeshua)return {type:'portal',id:'portal_yeshua',title:'Yeshua',desc:'Soft ethereal presence & Romans (Romans 10:13).',img:''};
-if(i%2===0){const keys=Object.keys(CHARACTERS); const char=CHARACTERS[keys[(i/2)%keys.length]]; return {type:'character',id:`char_${char.key}_${i}`,title:char.name,desc:`${char.name} — a chimera guardian of the Café.`,img:char.img,key:char.key,answer:char.answer,music:(char.music||false)};}
-const loreArr=['Mini-Paris was stitched from moonlight and cobblestone.','A faded lab token reads: "Atelier — experimental wing."','The Café floor sometimes remembers old songs.','A rat leaves a tiny key behind — Chari notices it.','Milo hums to the herbs; they unfurl like memories.'];
-return {type:'lore',id:`lore_${i}`,title:'Mystery Fragment',desc:loreArr[i%loreArr.length],img:''};
+  if(i===PORTALS.hans)return {type:'portal',id:'portal_hans',title:'Hans Portal',desc:'Hans — tea & snark.',img:CHARACTERS.hans.img};
+  if(i===PORTALS.miki)return {type:'portal',id:'portal_miki',title:'Miki Portal',desc:'Miki — music & portals.',img:CHARACTERS.miki.img};
+  if(i===PORTALS.yeshua)return {type:'portal',id:'portal_yeshua',title:'Yeshua',desc:'Soft ethereal presence & Romans (Romans 10:13).',img:''};
+  if(i%2===0){const keys=Object.keys(CHARACTERS);const char=CHARACTERS[keys[(i/2)%keys.length]];return {type:'character',id:`char_${char.key}_${i}`,title:char.name,desc:`${char.name} — a chimera guardian of the Café.`,img:char.img,key:char.key,answer:char.answer,music:(char.music||false)};}
+  const loreArr=['Mini-Paris was stitched from moonlight and cobblestone.','A faded lab token reads: "Atelier — experimental wing."','The Café floor sometimes remembers old songs.','A rat leaves a tiny key behind — Chari notices it.','Milo hums to the herbs; they unfurl like memories.'];
+  return {type:'lore',id:`lore_${i}`,title:'Mystery Fragment',desc:loreArr[i%loreArr.length],img:''};
 }
 
-/* --------------------------- GRID --------------------------- */
-function createGrid(){ grid.innerHTML=''; for(let i=0;i<TOTAL;i++){ const tile=document.createElement('div'); tile.className='tile'; tile.dataset.index=i; const mapping=mapTile(i); const stub=document.createElement('div'); stub.className='stub'; stub.textContent=mapping.title; tile.appendChild(stub); if(mapping.type==='portal' && mapping.id==='portal_yeshua')tile.classList.add('portal','yeshua'); if(completed[i])tile.classList.add('completed'); tile.addEventListener('click',()=>onTileClick(i)); tile.style.opacity=0; tile.style.transform='translateY(18px) scale(.98)'; setTimeout(()=>{tile.style.opacity=1;tile.style.transform='translateY(0) scale(1)';},60+i*18); grid.appendChild(tile);}}
-
-/* --------------------------- MODAL & COUNTDOWN --------------------------- */
-let popupActive=false,currentPopup=null,autoCloseTimeout=null,countdownRAF=null,countdownStart=0,countdownRemaining=AUTO_CLOSE_MS;
-
-function openModal(html,{tileIndex=null,replayable=false,disableAutoClose=false,quizActive=false}={}){ closeModal({markCompleted:false}); modalBox.innerHTML=html; overlay.classList.add('active'); overlay.style.zIndex=15000; popupActive=true; currentPopup={tileIndex,replayable,quizActive}; if(!disableAutoClose)startCountdown(AUTO_CLOSE_MS); else stopCountdown(); }
-function closeModal({markCompleted=true}={}){ stopCountdown(); overlay.classList.remove('active'); modalBox.innerHTML=''; popupActive=false; if(markCompleted && currentPopup && currentPopup.tileIndex!=null && !currentPopup.replayable){ completed[currentPopup.tileIndex]=true; finalizeCodexForTile(currentPopup.tileIndex); awardBadge(`tile_${currentPopup.tileIndex}`,`Tile ${currentPopup.tileIndex}`,`Completed tile ${currentPopup.tileIndex}`); saveAll(); const tileEl=document.querySelector(`.tile[data-index="${currentPopup.tileIndex}"]`); if(tileEl)tileEl.classList.add('completed'); } currentPopup=null; }
-overlay.addEventListener('click',e=>{if(e.target===overlay)closeModal();}); document.addEventListener('keydown',e=>{if(e.key==='Escape' && popupActive)closeModal();});
-function createCountdownUI(){ if(modalBox.querySelector('.countdownWrap'))return; const wrap=document.createElement('div'); wrap.className='countdownWrap'; wrap.innerHTML=`<svg class="countdownSVG" viewBox="0 0 150 150"><circle class="countdownCircle" cx="75" cy="75" r="70"></circle><circle class="countdownRing" cx="75" cy="75" r="70"></circle></svg><div class="countdownLabel">25s</div>`; modalBox.appendChild(wrap); return wrap; }
-function startCountdown(ms){stopCountdown();countdownRemaining=ms; countdownStart=performance.now(); const wrap=createCountdownUI(); const ring=wrap.querySelector('.countdownRing'); const label=wrap.querySelector('.countdownLabel'); function step(now){const elapsed=now-countdownStart;const remain=Math.max(0,countdownRemaining-elapsed); const pct=remain/countdownRemaining; ring.style.strokeDashoffset=(1-pct)*COUNTDOWN_CIRC; label.textContent=`${Math.ceil(remain/1000)}s`; if(remain<=0){closeModal(); return;} countdownRAF=requestAnimationFrame(step);} countdownRAF=requestAnimationFrame(step);}
-function stopCountdown(){if(countdownRAF)cancelAnimationFrame(countdownRAF);countdownRAF=null;}
-
-/* --------------------------- TILE CLICK --------------------------- */
-function onTileClick(index){
-const mapping=mapTile(index);
-if(mapping.type==='lore'||mapping.type==='portal'||mapping.type==='character'){
-let html=`<div class="row">`;
-if(mapping.img)html+=`<div class="left"><div class="bigPortrait">${mapping.img}</div></div>`;
-html+=`<div><h3>${esc(mapping.title)}</h3><p>${esc(mapping.desc)}</p>`;
-if(mapping.answer)html+=`<p><em>Hint: ${esc(mapping.answer)}</em></p>`;
-html+=`</div></div>`;
-openModal(html,{tileIndex:index});
-}
+function createGrid(){
+  grid.innerHTML='';
+  for(let i=0;i<TOTAL;i++){
+    const tile=document.createElement('div'); tile.className='tile';
+    tile.dataset.index=i;
+    const mapping=mapTile(i);
+    const stub=document.createElement('div'); stub.className='stub'; stub.textContent=mapping.title;
+    tile.appendChild(stub);
+    if(mapping.type==='portal'&&mapping.id==='portal_yeshua')tile.classList.add('portal','yeshua');
+    else if(mapping.type==='portal')tile.classList.add('portal');
+    if(completed[i])tile.classList.add('completed');
+    tile.addEventListener('click',()=>onTileClick(i));
+    // entrance animation
+    tile.style.opacity=0; tile.style.transform='translateY(18px) scale(.98)';
+    setTimeout(()=>{tile.style.opacity=1; tile.style.transform='translateY(0) scale(1)';},60+i*18);
+    grid.appendChild(tile);
+  }
 }
 
-/* --------------------------- CODEX & BADGES --------------------------- */
-function finalizeCodexForTile(index){
-const mapping=mapTile(index);
-if(mapping.type==='character' && !codex.includes(mapping.key))codex.push(mapping.key);
-refreshCodex();
+function addHalo(tile){
+  if(!tile.classList.contains('portal')||tile.querySelector('.haloRing'))return;
+  const haloWrap=document.createElement('div'); haloWrap.className='haloRing';
+  haloWrap.innerHTML=`<svg viewBox="0 0 150 150"><circle cx="75" cy="75" r="70"></circle></svg>`;
+  tile.appendChild(haloWrap);
+  const circle=haloWrap.querySelector('circle');
+  const totalLength=2*Math.PI*70;
+  circle.style.strokeDasharray=totalLength;
+  circle.style.strokeDashoffset=totalLength;
+  let start=null;
+  function step(timestamp){
+    if(!start)start=timestamp;
+    let elapsed=timestamp-start;
+    let pct=Math.min(elapsed/AUTO_CLOSE_MS,1);
+    circle.style.strokeDashoffset=totalLength*(1-pct);
+    if(pct<1)requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
 }
-function refreshCodex(){
-codexList.innerHTML=''; badgeGallery.innerHTML='';
-codex.forEach(k=>{ const char=CHARACTERS[k]; if(!char)return; const div=document.createElement('div'); div.className='codex-item'; div.innerHTML=`<img src="${char.img}" alt="${char.name}"><div>${char.name}</div>`; codexList.appendChild(div); });
-badges.forEach(b=>{ const img=document.createElement('img'); img.src=b.img||'placeholder_star.png'; img.title=b.name; badgeGallery.appendChild(img); });
+
+function onTileClick(i){
+  const mapping=mapTile(i);
+  if(mapping.type==='portal'){addHalo(document.querySelector(`.tile[data-index="${i}"]`)); alert(`Portal: ${mapping.title}`); return;}
+  alert(`${mapping.title}: ${mapping.desc}`);
 }
 
-/* --------------------------- BADGE --------------------------- */
-function awardBadge(id,name,desc){ if(!badges.some(b=>b.id===id))badges.push({id,name,desc,img:'placeholder_star.png'}); refreshCodex(); saveAll(); }
-
-/* --------------------------- LOGIN --------------------------- */
-function enterCafe(name){ username=name||`Guest_${Date.now()}`; localStorage.setItem(STORAGE.USER,username); loginOverlay.style.display='none'; createGrid(); }
-loginEnterBtn.addEventListener('click',()=>enterCafe(usernameInput.value));
-loginGuestBtn.addEventListener('click',()=>enterCafe('Guest'));
-if(!username)loginOverlay.style.display='flex'; else enterCafe(username);
-
-/* --------------------------- CODEx PANEL --------------------------- */
-codexToggle.addEventListener('click',()=>codexPanel.classList.toggle('open')); closeCodexBtn.addEventListener('click',()=>codexPanel.classList.remove('open'));
-
-/* --------------------------- RESTART --------------------------- */
-restartBtn.addEventListener('click',()=>{ if(confirm('Restart all progress?')){ codex=[]; completed={}; badges=[]; score=0; saveAll(); createGrid(); refreshCodex();}});
-
-/* --------------------------- MUSIC --------------------------- */
-document.body.addEventListener('dblclick',()=>{ if(mikiAudio.paused)mikiAudio.play(); else mikiAudio.pause(); });
+createGrid();
 });
 </script>
 </body>
