@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Chimera Café — Mini-Paris (Single File, B-Plus, Login Fixed)</title>
+<title>Chimera Café — Mini-Paris (Full Interactive)</title>
 <style>
 :root{
   --bg:#0c0c12;
@@ -53,7 +53,7 @@ h1{ margin:0; color:var(--muted); font-weight:600; font-size:1.05rem; }
 .countdownWrap{ position:absolute; right:18px; top:18px; width:70px; height:70px; z-index:2000; pointer-events:none; display:flex; align-items:center; justify-content:center; }
 .countdownSVG{ width:86%; height:86%; transform:rotate(-90deg); }
 .countdownCircle{ fill:none; stroke:rgba(255,255,255,0.03); stroke-width:6; }
-.countdownRing{ fill:none; stroke:var(--accent); stroke-width:6; stroke-linecap:round; stroke-dasharray: var(--countdown-circ); stroke-dashoffset: 0; }
+.countdownRing{ fill:none; stroke:var(--accent); stroke-width:6; stroke-linecap:round; stroke-dasharray: var(--countdown-circ); stroke-dashoffset: 0; transition:stroke-dashoffset 1s linear; }
 .countdownLabel{ position:absolute; right:28px; top:26px; font-size:12px; color:var(--muted); pointer-events:none; }
 #codexPanel{
   position:fixed; right:0; top:0; height:100vh; width:var(--codex-width); background:linear-gradient(180deg,#1b0b2f,#241235); box-shadow:-20px 0 60px rgba(0,0,0,0.6);
@@ -66,6 +66,10 @@ h1{ margin:0; color:var(--muted); font-weight:600; font-size:1.05rem; }
 .codex-item.completed{ border-left:4px solid #7cff7c; opacity:0.95; }
 .codex-item img{ width:64px; height:64px; border-radius:8px; }
 .badge-gallery{ margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; }
+.btn{padding:6px 14px;border-radius:6px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-weight:600;}
+.btn.ghost{background:none;border:1px solid var(--accent);}
+.quizChoice{display:block;margin:6px 0;padding:8px 12px;border-radius:6px;background:rgba(255,255,255,0.05);cursor:pointer;transition:0.2s;}
+.quizChoice:hover{background:rgba(122,75,255,0.2);}
 @media (max-width:900px){
   #codexPanel{ width:86vw; }
   .left{ display:none; }
@@ -139,13 +143,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function startAppAfterLogin() {
     loginOverlay.style.display = 'none';
-    console.log(`Logged in as: ${username}`);
     startApp();
   }
 
   loginEnterBtn.addEventListener('click', () => {
     const name = usernameInput.value.trim();
-    if(!name){ alert('Please enter a name or click Guest'); return; }
+    if(!name){ alert('Enter a name or click Guest'); return; }
     username = name;
     localStorage.setItem(STORAGE.USER, username);
     startAppAfterLogin();
@@ -162,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if(username){ startAppAfterLogin(); } else { loginOverlay.style.display='flex'; usernameInput.focus(); }
 
-  // ====== REST OF APP LOGIC ======
+  // ====== APP LOGIC ======
   const grid = document.getElementById('grid');
   const overlay = document.getElementById('overlay');
   const modalBox = document.getElementById('modalBox');
@@ -181,32 +184,25 @@ document.addEventListener('DOMContentLoaded', () => {
   let score = Number(localStorage.getItem(STORAGE.SCORE)||0);
   let badges = JSON.parse(localStorage.getItem(STORAGE.BADGES)||'[]');
 
-  function updateHUD(){
-    scoreDisplay.textContent = `Score: ${score}`;
-    badgeCount.textContent = `Badges: ${badges.length}`;
-  }
-  updateHUD();
+  function updateHUD(){ scoreDisplay.textContent=`Score: ${score}`; badgeCount.textContent=`Badges: ${badges.length}`; }
+  function saveAll(){ localStorage.setItem(STORAGE.CODEX,JSON.stringify(codex)); localStorage.setItem(STORAGE.COMPLETED,JSON.stringify(completed)); localStorage.setItem(STORAGE.SCORE,String(score)); localStorage.setItem(STORAGE.BADGES,JSON.stringify(badges)); updateHUD(); }
 
-  // ==== CHARACTERS, PORTALS, AND MAPPING ====
-  const CHARACTERS = {
+  const CHARACTERS={
     star:{key:'star',name:'Star',img:'placeholder_star.png',answer:'freedom'},
     hans:{key:'hans',name:'Hans',img:'placeholder_hans.png',answer:'mini-paris'},
     chari:{key:'chari',name:'Chari',img:'placeholder_chari.png',answer:'yeshua'},
     milo:{key:'milo',name:'Milo',img:'placeholder_milo.png',answer:'gardener'},
-    miki:{key:'miki',name:'Miki',img:'placeholder_miki.png',answer:'lab',music:true},
+    miki:{key:'miki',name:'Miki',img:'placeholder_miki.png',answer:'lab',music:true}
   };
-  const PORTALS = {hans:6,yeshua:20,miki:42};
+  const PORTALS={hans:6,yeshua:20,miki:42};
 
-  const esc = s => String(s||'').replace(/[&<>"'`]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;'}[m]));
-
-  function saveAll(){
-    localStorage.setItem(STORAGE.CODEX,JSON.stringify(codex));
-    localStorage.setItem(STORAGE.COMPLETED,JSON.stringify(completed));
-    localStorage.setItem(STORAGE.SCORE,String(score));
-    localStorage.setItem(STORAGE.BADGES,JSON.stringify(badges));
-    localStorage.setItem(STORAGE.USER,username);
-    updateHUD();
-  }
+  const quizData={
+    star:{q:'What did Star weave the Café walls from?',choices:['Moonlight','Cheese','Sunlight','Chocolate'],answer:'Moonlight'},
+    hans:{q:'What powers Hans’ dimensional forge?',choices:['Forge','Tea','Song','Wind'],answer:'Forge'},
+    chari:{q:'What awakens Chari’s timelines?',choices:['Timeline','Coffee','Sleep','Music'],answer:'Timeline'},
+    milo:{q:'What helps Milo grow his magical herbs?',choices:['Water','Music','Sunlight','Moonlight'],answer:'Music'},
+    miki:{q:'Where did Miki discover her music portals?',choices:['Lab','Forest','Sky','Cafe'],answer:'Lab'}
+  };
 
   function mapTile(i){
     if(i===PORTALS.hans) return {type:'portal',id:'portal_hans',title:'Hans Portal',desc:'Hans — tea & snark.',img:CHARACTERS.hans.img};
@@ -219,8 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function createGrid(){
     grid.innerHTML='';
-    const TOTAL=49;
-    for(let i=0;i<TOTAL;i++){
+    for(let i=0;i<49;i++){
       const tile=document.createElement('div'); tile.className='tile'; tile.dataset.index=i;
       const mapping=mapTile(i);
       const stub=document.createElement('div'); stub.className='stub'; stub.textContent=mapping.title;
@@ -234,18 +229,43 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function showQuiz(charKey){
+    const quiz = quizData[charKey];
+    overlay.classList.add('active');
+    modalBox.innerHTML = `<h2>${CHARACTERS[charKey].name} asks:</h2><p>${quiz.q}</p>`;
+    quiz.choices.forEach(choice=>{
+      const btn = document.createElement('div');
+      btn.className='quizChoice';
+      btn.textContent=choice;
+      btn.addEventListener('click',()=>{
+        if(choice===quiz.answer){
+          modalBox.innerHTML=`<p>Correct! ${CHARACTERS[charKey].name} smiles brightly.</p>`;
+          score+=10; completed[PORTALS[charKey]||0]=true;
+          if(!badges.includes(charKey)) badges.push(charKey);
+          saveAll();
+          setTimeout(()=>overlay.classList.remove('active'),2000);
+        } else {
+          modalBox.innerHTML=`<p>Not quite… Try exploring again!</p>`;
+          setTimeout(()=>overlay.classList.remove('active'),2000);
+        }
+        createGrid();
+      });
+      modalBox.appendChild(btn);
+    });
+  }
+
   function onTileClick(i,mapping){
-    console.log('Tile clicked',i,mapping.type);
-    // full modal, quiz, and portal logic to be attached here
+    if(mapping.type==='character') showQuiz(mapping.key);
+    else if(mapping.type==='portal') alert(`Entering ${mapping.title}...`);
+    else console.log('Lore tile clicked',mapping.desc);
   }
 
-  function startApp(){
-    createGrid();
-    if(!completed[0]) console.log('Would open Star intro');
-  }
+  function startApp(){ createGrid(); updateHUD(); }
 
+  codexToggle.addEventListener('click',()=> codexPanel.classList.add('open'));
+  closeCodexBtn.addEventListener('click',()=> codexPanel.classList.remove('open'));
+  restartBtn.addEventListener('click',()=>{ localStorage.clear(); location.reload(); });
 });
 </script>
 </body>
 </html>
-
