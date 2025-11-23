@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Chimera Café — Mini-Paris (Single File, B-Plus, Login & Quiz)</title>
+<style>
+:root{
+  --bg:#0c0c12;
+  --panel:#12061a;
+  --accent:#7a4bff;
+  --accent-2:#9a6fff;
+  --completed:#8a6be6;
+  --muted:#cfc7e8;
+  --codex-width:360px;
+  --countdown-circ:440;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100vh; background:linear-gradient(180deg,var(--bg), #161226 86%);
+  color:#fff; font-family:Inter, "Poppins", system-ui, -apple-system; -webkit-font-smoothing:antialiased;
+  display:flex; align-items:center; justify-content:center; padding:20px;
+}
+.wrap{ width:min(1200px,96vw); max-width:1200px; position:relative; }
+header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:12px; }
+h1{ margin:0; color:var(--muted); font-weight:600; font-size:1.05rem; }
+.iconBtn{
+  position:fixed; width:46px; height:46px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(180deg, rgba(122,75,255,0.16), rgba(122,75,255,0.08)); color:white; border:1px solid rgba(255,255,255,0.04);
+  cursor:pointer; z-index:16000; box-shadow:0 8px 30px rgba(122,75,255,0.08);
+}
+#restartBtn{ left:16px; top:16px; }
+#logoutBtn{ left:80px; top:16px; }
+#codexToggle{ right:16px; top:16px; }
+.hud{ display:flex; gap:12px; align-items:center; color:var(--muted); font-weight:600; }
+#grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:10px; width:min(84vmin,900px); aspect-ratio:1/1; perspective:1000px; }
+.tile{
+  background:linear-gradient(180deg,#1b1622,#181022); border-radius:12px; display:flex; align-items:center; justify-content:center;
+  transition:transform .28s, box-shadow .28s, background .28s, opacity .28s; cursor:pointer; position:relative; overflow:hidden;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
+  min-height:0;
+}
+.tile:hover{ transform: translateY(-6px) scale(1.03); box-shadow: 0 18px 60px rgba(122,75,255,0.08); }
+.stub{ width:82%; height:82%; border-radius:8px; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); display:flex; align-items:center; justify-content:center; font-family:Georgia,serif; font-weight:700; color:#fff; text-align:center; padding:8px; }
+.tile.completed{ background: linear-gradient(180deg,var(--completed), #6f49d9); box-shadow:0 20px 50px rgba(111,73,217,0.18); transform:none; animation:completedPulse .9s ease; }
+@keyframes completedPulse{ 0%{ transform:scale(1.02);} 50%{ transform:scale(1);} 100%{ transform:scale(1.01);} }
+.tile.portal.yeshua::after{ content:""; position:absolute; inset:0; pointer-events:none; box-shadow: inset 0 0 40px rgba(255,240,200,0.06), 0 8px 40px rgba(200,160,255,0.03); border-radius:12px; }
+#overlay{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.6); z-index:15000; }
+#overlay.active{ display:flex; }
+.modal{ width:min(920px,94%); max-height:86vh; overflow:auto; background:linear-gradient(180deg,#110617,#1a0f2b); padding:18px; border-radius:12px; box-shadow:0 20px 80px rgba(0,0,0,0.6); color:#fff; position:relative; }
+.row{ display:flex; gap:14px; align-items:flex-start; }
+.left{ width:140px; flex:0 0 140px; }
+.bigPortrait{ width:140px; height:140px; border-radius:10px; background:#221132; display:flex; align-items:center; justify-content:center; font-family:Georgia,serif; font-weight:700; }
+.countdownWrap{ position:absolute; right:18px; top:18px; width:70px; height:70px; z-index:2000; pointer-events:none; display:flex; align-items:center; justify-content:center; }
+.countdownSVG{ width:86%; height:86%; transform:rotate(-90deg); }
+.countdownCircle{ fill:none; stroke:rgba(255,255,255,0.03); stroke-width:6; }
+.countdownRing{ fill:none; stroke:var(--accent); stroke-width:6; stroke-linecap:round; stroke-dasharray: var(--countdown-circ); stroke-dashoffset: 0; }
+.countdownLabel{ position:absolute; right:28px; top:26px; font-size:12px; color:var(--muted); pointer-events:none; }
+#codexPanel{
+  position:fixed; right:0; top:0; height:100vh; width:var(--codex-width); background:linear-gradient(180deg,#1b0b2f,#241235); box-shadow:-20px 0 60px rgba(0,0,0,0.6);
+  transform:translateX(100%); transition:transform .45s cubic-bezier(.2,.9,.25,1); z-index:17000; padding:12px; overflow:auto;
+}
+#codexPanel.open{ transform:translateX(0); }
+.codex-header{ display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.codex-list{ margin-top:12px; display:flex; flex-direction:column; gap:8px; }
+.codex-item{ padding:10px; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:8px; display:flex; gap:12px; align-items:center; }
+.codex-item.completed{ border-left:4px solid #7cff7c; opacity:0.95; }
+.codex-item img{ width:64px; height:64px; border-radius:8px; }
+.badge-gallery{ margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; }
+.quizChoice{
+  display:block; margin:8px 0; padding:12px 16px; border-radius:8px; background:rgba(255,255,255,0.05);
+  cursor:pointer; font-weight:600; transition:0.2s; text-align:left;
+}
+.quizChoice:hover, .quizChoice:focus{ background:rgba(122,75,255,0.25); outline:none; }
+@media (max-width:900px){
+  #codexPanel{ width:86vw; }
+  .left{ display:none; }
+  .bigPortrait{ width:100%; height:120px; margin-bottom:8px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap" aria-live="polite">
+  <header>
+    <h1>Comfort Café — Mini-Paris</h1>
+    <div style="display:flex;gap:12px;align-items:center;">
+      <div class="hud"><div id="scoreDisplay">Score: 0</div><div id="badgeCount" style="opacity:0.9">Badges: 0</div></div>
+    </div>
+  </header>
+  <main>
+    <div id="grid" aria-label="Chimera grid"></div>
+  </main>
+</div>
+
+<div id="restartBtn" class="iconBtn" title="Restart progress">↻</div>
+<div id="logoutBtn" class="iconBtn" title="Logout">⏏</div>
+<div id="codexToggle" class="iconBtn" title="Open Codex">📖</div>
+
+<div id="loginOverlay" role="dialog" aria-modal="true" style="display:flex; align-items:center; justify-content:center; inset:0; position:fixed; z-index:18000; background:linear-gradient(180deg, rgba(0,0,0,0.86), rgba(0,0,0,0.9));">
+  <div class="loginCard" style="width:400px; background:linear-gradient(180deg,#1b0f2b,#241235); padding:22px; border-radius:12px; text-align:center; box-shadow:0 40px 120px rgba(0,0,0,0.6);">
+    <h2 style="font-family:Georgia, serif; margin:0 0 6px 0;">Enter the Café</h2>
+    <input id="usernameInput" placeholder="Your name (or Guest)" style="width:88%; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.06); background:rgba(0,0,0,0.08); color:#fff"/>
+    <div style="margin-top:12px; display:flex; gap:8px; justify-content:center;">
+      <button id="loginEnterBtn" class="btn">Enter</button>
+      <button id="loginGuestBtn" class="btn ghost">Guest</button>
+    </div>
+    <p style="margin-top:10px;color:var(--muted);font-size:0.88rem;">Progress is saved locally in this browser.</p>
+  </div>
+</div>
+
+<div id="overlay" role="dialog" aria-hidden="true">
+  <div class="modal" id="modalBox" role="document"></div>
+</div>
+
+<aside id="codexPanel" aria-hidden="true" aria-label="Codex drawer">
+  <div class="codex-header">
+    <h3 style="margin:0;">Codex</h3>
+    <div style="display:flex;gap:8px;">
+      <button id="closeCodex" class="btn ghost">Close</button>
+    </div>
+  </div>
+  <div class="codex-list" id="codexList"></div>
+  <hr style="opacity:0.06;margin:12px 0;">
+  <div><strong>Badges</strong></div>
+  <div class="badge-gallery" id="badgeGallery"></div>
+</aside>
+
+<audio id="mikiAudio" src="cafespiritpulse.mp3"></audio>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const grid = document.getElementById('grid');
+  const loginOverlay = document.getElementById('loginOverlay');
+  const usernameInput = document.getElementById('usernameInput');
+  const loginEnterBtn = document.getElementById('loginEnterBtn');
+  const loginGuestBtn = document.getElementById('loginGuestBtn');
+  const overlay = document.getElementById('overlay');
+  const modalBox = document.getElementById('modalBox');
+  const codexPanel = document.getElementById('codexPanel');
+  const codexToggle = document.getElementById('codexToggle');
+  const closeCodexBtn = document.getElementById('closeCodex');
+  const codexList = document.getElementById('codexList');
+  const badgeGallery = document.getElementById('badgeGallery');
+  const restartBtn = document.getElementById('restartBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const mikiAudio = document.getElementById('mikiAudio');
+  const scoreDisplay = document.getElementById('scoreDisplay');
+  const badgeCount = document.getElementById('badgeCount');
+
+  const GRID_SIZE = 7;
+  const TOTAL = GRID_SIZE * GRID_SIZE;
+  const STORAGE = {
+    CODEX: 'chimera_codex_vBplus',
+    COMPLETED: 'chimera_completed_vBplus',
+    SCORE: 'chimera_score_vBplus',
+    BADGES: 'chimera_badges_vBplus',
+    USER: 'chimera_user_vBplus'
+  };
+
+  let codex = JSON.parse(localStorage.getItem(STORAGE.CODEX)||'[]');
+  let completed = JSON.parse(localStorage.getItem(STORAGE.COMPLETED)||'{}');
+  let score = Number(localStorage.getItem(STORAGE.SCORE)||0);
+  let badges = JSON.parse(localStorage.getItem(STORAGE.BADGES)||'[]');
+  let username = localStorage.getItem(STORAGE.USER)||'';
+
+  function updateHUD(){ scoreDisplay.textContent=`Score: ${score}`; badgeCount.textContent=`Badges: ${badges.length}`; }
+  updateHUD();
+
+  // ==== LOGIN ====
+  loginEnterBtn.addEventListener('click',()=>{ const name=usernameInput.value.trim(); if(!name){alert('Enter name or Guest');return;} username=name; localStorage.setItem(STORAGE.USER,username); loginOverlay.style.display='none'; startApp(); });
+  loginGuestBtn.addEventListener('click',()=>{ username='Guest'; usernameInput.value='Guest'; localStorage.setItem(STORAGE.USER,username); loginOverlay.style.display='none'; startApp(); });
+  usernameInput.addEventListener('keydown',(e)=>{if(e.key==='Enter') loginEnterBtn.click();});
+
+  logoutBtn.addEventListener('click',()=>{ localStorage.removeItem(STORAGE.USER); location.reload(); });
+
+  // ==== CHARACTERS & PORTALS ====
+  const CHARACTERS = {
+    star:{key:'star',name:'Star',img:'placeholder_star.png',answer:'Moonlight'},
+    hans:{key:'hans',name:'Hans',img:'placeholder_hans.png',answer:'Forge'},
+    chari:{key:'chari',name:'Chari',img:'placeholder_chari.png',answer:'Timeline'},
+    milo:{key:'milo',name:'Milo',img:'placeholder_milo.png',answer:'Herbs'},
+    miki:{key:'miki',name:'Miki',img:'placeholder_miki.png',answer:'Lab',music:true}
+  };
+  const PORTALS={hans:6,yeshua:20,miki:42};
+
+  const quizData={
+    star:{q:'What did Star weave the Café walls from?',choices:['Moonlight','Cheese','Sunlight','Chocolate'],answer:'Moonlight'},
+    hans:{q:'What powers Hans\' dimensional forge?',choices:['Forge','Tea','Song','Wind'],answer:'Forge'},
+    chari:{q:'What awakens Chari’s timelines?',choices:['Timeline','Coffee','Sleep','Music'],answer:'Timeline'},
+    milo:{q:'What does Milo use to help his plants grow?',choices:['Water','Herbs','Magic','Sun'],answer:'Herbs'},
+    miki:{q:'Where does Miki find her music inspiration?',choices:['Lab','Café','Garden','Library'],answer:'Lab'}
+  };
+
+  function saveAll(){ localStorage.setItem(STORAGE.CODEX,JSON.stringify(codex)); localStorage.setItem(STORAGE.COMPLETED,JSON.stringify(completed)); localStorage.setItem(STORAGE.SCORE,String(score)); localStorage.setItem(STORAGE.BADGES,JSON.stringify(badges)); localStorage.setItem(STORAGE.USER,username); updateHUD(); }
+
+  function mapTile(i){
+    if(i===PORTALS.hans) return {type:'portal',id:'portal_hans',title:'Hans Portal',desc:'Hans — tea & snark.',img:CHARACTERS.hans.img};
+    if(i===PORTALS.miki) return {type:'portal',id:'portal_miki',title:'Miki Portal',desc:'Miki — music & portals.',img:CHARACTERS.miki.img};
+    if(i===PORTALS.yeshua) return {type:'portal',id:'portal_yeshua',title:'Yeshua',desc:'Soft ethereal presence & Romans.',img:''};
+    if(i%2===0){const keys=Object.keys(CHARACTERS); const char=CHARACTERS[keys[(i/2)%keys.length]]; return {type:'character',id:`char_${char.key}_${i}`,title:char.name,desc:`${char.name} — a chimera guardian of the Café.`,img:char.img,key:char.key,answer:char.answer,music:(char.music||false)};}
+    const loreArr=['Mini-Paris was stitched from moonlight and cobblestone.','A faded lab token
