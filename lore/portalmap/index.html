@@ -191,5 +191,95 @@ document.addEventListener('DOMContentLoaded', () => {
     return {type:'lore', id:`lore_${i}`, title:'Mystery Fragment', desc:'A fragment of the Café's hidden lore.', img:''};
   }
 
-  function createGrid(){
-    grid.innerHTML='';
+function createGrid(){
+  grid.innerHTML='';
+  for(let i=0;i<TOTAL;i++){
+    const tile=document.createElement('div');
+    tile.className='tile';
+    tile.dataset.index=i;
+    const mapping=mapTile(i);
+
+    const stub=document.createElement('div');
+    stub.className='stub';
+    stub.textContent=mapping.title;
+    tile.appendChild(stub);
+
+    if(mapping.type==='portal') tile.classList.add('portal');
+    if(mapping.type==='portal' && mapping.id==='portal_yeshua') tile.classList.add('yeshua');
+    if(completed[i]) tile.classList.add('completed');
+
+    tile.addEventListener('click', ()=> onTileClick(i, mapping));
+
+    tile.style.opacity=0;
+    tile.style.transform='translateY(18px) scale(.98)';
+    setTimeout(()=>{
+      tile.style.opacity=1;
+      tile.style.transform='translateY(0) scale(1)';
+    },60+i*18);
+
+    grid.appendChild(tile);
+  }
+}
+
+function onTileClick(i, mapping){
+  if(mapping.type==='character'){
+    openCharacterModal(mapping);
+  } else if(mapping.type==='portal'){
+    openPortal(mapping);
+  } else {
+    console.log('Tile clicked', i, mapping.type);
+  }
+}
+
+function openCharacterModal(char){
+  modalBox.innerHTML='';
+
+  const row=document.createElement('div');
+  row.className='row';
+
+  const left=document.createElement('div');
+  left.className='left';
+  const portrait=document.createElement('div');
+  portrait.className='bigPortrait';
+  portrait.textContent=char.name;
+  left.appendChild(portrait);
+
+  const right=document.createElement('div');
+  right.style.flex='1';
+  right.innerHTML=`<p>${char.desc}</p>`;
+
+  // Add quiz if exists
+  if(quizData[char.key]){
+    const qDiv=document.createElement('div');
+    qDiv.innerHTML=`<p><strong>Quiz:</strong> ${quizData[char.key].q}</p>`;
+    quizData[char.key].choices.forEach(choice=>{
+      const btn=document.createElement('button');
+      btn.textContent=choice;
+      btn.style.margin='4px';
+      btn.addEventListener('click',()=> handleQuizAnswer(char.key, choice));
+      qDiv.appendChild(btn);
+    });
+    right.appendChild(qDiv);
+  }
+
+  row.appendChild(left);
+  row.appendChild(right);
+  modalBox.appendChild(row);
+  overlay.classList.add('active');
+}
+
+function handleQuizAnswer(key, choice){
+  if(choice===quizData[key].answer){
+    alert('Correct!');
+    completed[PORTALS[key]||0]=true;
+    saveAll();
+    createGrid();
+    overlay.classList.remove('active');
+  } else {
+    alert('Try again!');
+  }
+}
+
+function openPortal(portal){
+  alert(`Entering ${portal.title}...`);
+}
