@@ -133,4 +133,79 @@ return {type:'lore',id:`lore_${i}`,title:'Mystery Fragment',desc:loreArr[i%loreA
 function createGrid(){grid.innerHTML='';for(let i=0;i<TOTAL;i++){const tile=document.createElement('div');tile.className='tile';tile.dataset.index=i;const mapping=mapTile(i);const stub=document.createElement('div');stub.className='stub';stub.textContent=mapping.title;tile.appendChild(stub);if(mapping.type==='portal'&&mapping.id==='portal_yeshua')tile.classList.add('portal','yeshua');if(completed[i])tile.classList.add('completed');tile.addEventListener('click',()=>onTileClick(i));tile.style.opacity=0;tile.style.transform='translateY(18px) scale(.98)';setTimeout(()=>{tile.style.opacity=1;tile.style.transform='translateY(0) scale(1)';},60+i*18);grid.appendChild(tile);}}
 function showQuiz(char){overlay.classList.add('active');modalBox.innerHTML=`<h2>${char.name}</h2><p>${char.desc}</p>`;
 const options=document.createElement('div');
-const quizData={star:{q:'What did Star weave the Café walls from?',choices:['Moonlight','Cheese','Sunlight','Chocolate'],answer:'Moonlight'},hans:{q:'What powers Hans' dimensional forge?',choices:['Forge','Tea','Song','Wind'],answer:'Forge'},chari:{q:'What awakens Chari’s timelines?',choices:['Timeline','Coffee','Sleep','Music'],answer:'Timeline'},milo:{q
+const quizData = {
+  star: {
+    q: 'What did Star weave the Café walls from?',
+    choices: ['Moonlight', 'Cheese', 'Sunlight', 'Chocolate'],
+    answer: 'Moonlight'
+  },
+  hans: {
+    q: "What powers Hans' dimensional forge?",
+    choices: ['Forge', 'Tea', 'Song', 'Wind'],
+    answer: 'Forge'
+  },
+  chari: {
+    q: "What awakens Chari’s timelines?",
+    choices: ['Timeline', 'Coffee', 'Sleep', 'Music'],
+    answer: 'Timeline'
+  },
+  milo: {
+    q: "Which element helps Milo grow magical herbs?",
+    choices: ['Sunlight', 'Music', 'Rain', 'Whispers'],
+    answer: 'Whispers'
+  },
+  miki: {
+    q: "Which tool lets Miki open new musical portals?",
+    choices: ['Guitar', 'Voice', 'Piano', 'Chimes'],
+    answer: 'Voice'
+  }
+};
+
+// Example of a function to show the quiz modal for a character
+function showQuiz(characterKey) {
+  const data = quizData[characterKey];
+  if (!data) return;
+
+  modalBox.innerHTML = `
+    <h2>${CHARACTERS[characterKey].name} asks:</h2>
+    <p>${data.q}</p>
+    <div id="quizChoices" style="display:flex;flex-direction:column;gap:8px;"></div>
+  `;
+  overlay.classList.add('active');
+  
+  const choicesDiv = document.getElementById('quizChoices');
+  data.choices.forEach(choice => {
+    const btn = document.createElement('button');
+    btn.textContent = choice;
+    btn.className = 'btn';
+    btn.addEventListener('click', () => {
+      if (choice === data.answer) {
+        alert('Correct! 🌟'); 
+        completedCharacter(characterKey);
+      } else {
+        alert('Oops! Try again later.');
+      }
+      overlay.classList.remove('active');
+    });
+    choicesDiv.appendChild(btn);
+  });
+}
+
+// Example function to mark a character as completed, award badge, update HUD
+function completedCharacter(key) {
+  const charTileIndex = Object.keys(CHARACTERS).indexOf(key) * 2; // adjust if tile mapping differs
+  completed[charTileIndex] = true;
+  if (!badges.includes(key)) badges.push(key);
+  saveAll();
+  createGrid(); // refresh grid to show completed state
+}
+
+// Modify the onTileClick function to trigger quiz when character tile clicked
+function onTileClick(i) {
+  const mapping = mapTile(i);
+  if (mapping.type === 'character') {
+    showQuiz(mapping.key);
+  } else {
+    console.log('Tile clicked', i, mapping.type);
+  }
+}
