@@ -145,4 +145,129 @@ const esc=s=>String(s||'').replace(/[&<>\"'`]/g,m=>({'&':'&amp;','<':'&lt;','>':
 function saveAll(){localStorage.setItem(STORAGE.CODEX,JSON.stringify(codex));localStorage.setItem(STORAGE.COMPLETED,JSON.stringify(completed));localStorage.setItem(STORAGE.SCORE,String(score));localStorage.setItem(STORAGE.BADGES,JSON.stringify(badges));localStorage.setItem(STORAGE.USER,username);updateHUD();}
 const quizData={star:{q:'What did Star weave the Café walls from?',choices:['Moonlight','Cheese','Sunlight','Chocolate'],answer:'Moonlight'},hans:{q:'What powers Hans\' dimensional forge?',choices:['Forge','Tea','Song','Wind'],answer:'Forge'},chari:{q:'What awakens Chari’s timelines?',choices:['Timeline','Coffee','Sleep','Music'],answer:'Timeline'},milo:{q:'Which herbs harmonize with Milo’s melodies?',choices:['Basil','Mint','Lavender','Thyme'],answer:'Lavender'},miki:{q:'Which song opens Miki’s portal?',choices:['Dreams','Lab Song','Starlight','Freedom'],answer:'Lab Song'}};
 function mapTile(i){if(i===PORTALS.hans)return{type:'portal',id:'portal_hans',title:'Hans Portal',desc:'Hans — tea & snark.',img:CHARACTERS.hans.img};if(i===PORTALS.miki)return{type:'portal',id:'portal_miki',title:'Miki Portal',desc:'Miki — music & portals.',img:CHARACTERS.miki.img};if(i===PORTALS.yeshua)return{type:'portal',id:'portal_yeshua',title:'Yeshua',desc:'Soft ethereal presence & Romans (Romans 10:13).',img:''};if(i%2===0){const keys=Object.keys(CHARACTERS);const char=CHARACTERS[keys[(i/2)%keys.length]];return{type:'character',id:`char_${char.key}_${i}`,title:char.name,desc:`${char.name} — a chimera guardian of the Café.`,img:char.img,key:char.key,answer:char.answer,music:(char.music||false)};}const loreArr=['Mini-Paris was stitched from moonlight and cobblestone.','A faded lab token reads: "Atelier — experimental wing."','The Café floor sometimes remembers old songs.','A rat leaves a tiny key behind — Chari notices it.','Milo hums to the herbs; they unfurl like memories.'];return{type:'lore',id:`lore_${i}`,title:'Mystery Fragment',desc:loreArr[i%loreArr.length],img:''};}
-function createGrid(){grid.innerHTML='';for(let i=0;i<TOTAL;i++){const tile=document.createElement('div');tile.className='tile';tile.dataset.index=i;const mapping=mapTile(i);const stub=document.createElement('div');stub.className='stub';stub.textContent=mapping.title;tile.appendChild(stub);if(mapping.type==='portal'&&mapping.id==='portal_yeshua')tile.classList.add('portal
+function createGrid(){grid.innerHTML='';for(let i=0;i<TOTAL;i++){const tile=document.createElement('div');tile.className='tile';tile.dataset.index=i;const mapping=mapTile(i);const stub=document.createElement('div');stub.className='stub';stub.textContent=mapping.title;tile.appendChild(stub);
+if(mapping.type==='portal'&&mapping.id==='portal_yeshua')tile.classList.add('portalif(mapping.type==='portal' && mapping.id==='portal_yeshua') tile.classList.add('portal','yeshua');
+if(completed[i]) tile.classList.add('completed');
+
+tile.addEventListener('click', () => onTileClick(i));
+
+tile.style.opacity = 0;
+tile.style.transform = 'translateY(18px) scale(.98)';
+setTimeout(() => {
+  tile.style.opacity = 1;
+  tile.style.transform = 'translateY(0) scale(1)';
+}, 60 + i * 18);
+
+grid.appendChild(tile);
+}
+}
+
+// ==== QUIZ DATA ====
+const quizData = {
+  star: {
+    q: 'What did Star weave the Café walls from?',
+    choices: ['Moonlight', 'Cheese', 'Sunlight', 'Chocolate'],
+    answer: 'Moonlight',
+    react: 'Star purrs softly and the walls shimmer with moonlight.'
+  },
+  hans: {
+    q: 'What powers Hans\' dimensional forge?',
+    choices: ['Forge', 'Tea', 'Song', 'Wind'],
+    answer: 'Forge',
+    react: 'Hans chuckles, sparks fly, and the forge glows warmly.'
+  },
+  chari: {
+    q: 'What awakens Chari’s timelines?',
+    choices: ['Timeline', 'Coffee', 'Sleep', 'Music'],
+    answer: 'Timeline',
+    react: 'Chari smiles, threads of fate twinkle in the air.'
+  },
+  milo: {
+    q: 'Which herb brings Milo’s garden to life instantly?',
+    choices: ['Basil', 'Lavender', 'Thyme', 'Sage'],
+    answer: 'Thyme',
+    react: 'Milo hums; the plants grow and bloom magically.'
+  },
+  miki: {
+    q: 'Which note unlocks Miki’s secret melody?',
+    choices: ['C', 'E', 'G', 'A'],
+    answer: 'G',
+    react: 'Miki strums the note; a portal hums with music.'
+  }
+};
+
+// ==== TILE CLICK LOGIC ====
+function onTileClick(i) {
+  const mapping = mapTile(i);
+  if (mapping.type === 'character') {
+    showQuizModal(mapping.key);
+  } else if (mapping.type === 'portal') {
+    showPortal(mapping.id);
+  } else if (mapping.type === 'lore') {
+    showLore(mapping.title, mapping.desc);
+  }
+}
+
+// ==== MODAL FUNCTIONS ====
+function showQuizModal(characterKey) {
+  const data = quizData[characterKey];
+  if (!data) return;
+
+  modalBox.innerHTML = `<h3>${CHARACTERS[characterKey].name} asks:</h3><p>${data.q}</p>`;
+  const choicesDiv = document.createElement('div');
+  choicesDiv.style.display = 'flex';
+  choicesDiv.style.flexDirection = 'column';
+  choicesDiv.style.gap = '8px';
+  
+  data.choices.forEach(choice => {
+    const btn = document.createElement('button');
+    btn.textContent = choice;
+    btn.className = 'btn';
+    btn.addEventListener('click', () => {
+      if (choice === data.answer) {
+        alert(data.react);
+        completed[i] = true;
+        score += 5;
+        saveAll();
+        createGrid();
+        overlay.classList.remove('active');
+      } else {
+        alert(`${CHARACTERS[characterKey].name} shakes their head. Try again!`);
+      }
+    });
+    choicesDiv.appendChild(btn);
+  });
+
+  modalBox.appendChild(choicesDiv);
+  overlay.classList.add('active');
+}
+
+function showLore(title, desc) {
+  modalBox.innerHTML = `<h3>${title}</h3><p>${desc}</p>`;
+  overlay.classList.add('active');
+}
+
+function showPortal(portalId) {
+  modalBox.innerHTML = `<h3>Entering ${portalId.replace('portal_', '')}...</h3><p>The realm expands as you step through.</p>`;
+  overlay.classList.add('active');
+  // Example: could trigger animations, realm transitions, etc.
+}
+
+// ==== OVERLAY CLICK TO CLOSE ====
+overlay.addEventListener('click', e => { if(e.target===overlay) overlay.classList.remove('active'); });
+
+// ==== START APP ====
+function startApp() {
+  createGrid();
+  if(!completed[0]) console.log('Would open Star intro');
+}
+
+if(localStorage.getItem(STORAGE.USER)) {
+  username = localStorage.getItem(STORAGE.USER);
+  loginOverlay.style.display = 'none';
+  startApp();
+} else {
+  loginOverlay.style.display = 'flex';
+  usernameInput.focus();
+}
+
