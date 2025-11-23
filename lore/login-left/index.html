@@ -198,4 +198,100 @@ document.addEventListener('DOMContentLoaded', () => {
     if(i===PORTALS.miki) return {type:'portal',id:'portal_miki',title:'Miki Portal',desc:'Miki — music & portals.',img:CHARACTERS.miki.img};
     if(i===PORTALS.yeshua) return {type:'portal',id:'portal_yeshua',title:'Yeshua',desc:'Soft ethereal presence & Romans.',img:''};
     if(i%2===0){const keys=Object.keys(CHARACTERS); const char=CHARACTERS[keys[(i/2)%keys.length]]; return {type:'character',id:`char_${char.key}_${i}`,title:char.name,desc:`${char.name} — a chimera guardian of the Café.`,img:char.img,key:char.key,answer:char.answer,music:(char.music||false)};}
-    const loreArr=['Mini-Paris was stitched from moonlight and cobblestone.','A faded lab token
+    const loreArr=[
+  'Mini-Paris was stitched from moonlight and cobblestone.',
+  'A faded lab token reads: "Atelier — experimental wing."',
+  'The Café floor sometimes remembers old songs.',
+  'A rat leaves a tiny key behind — Chari notices it.',
+  'Milo hums to the herbs; they unfurl like memories.'
+];
+
+function mapTile(i){
+  if(i===PORTALS.hans) return {type:'portal', id:'portal_hans', title:'Hans Portal', desc:'Hans — tea & snark.', img:CHARACTERS.hans.img};
+  if(i===PORTALS.miki) return {type:'portal', id:'portal_miki', title:'Miki Portal', desc:'Miki — music & portals.', img:CHARACTERS.miki.img};
+  if(i===PORTALS.yeshua) return {type:'portal', id:'portal_yeshua', title:'Yeshua', desc:'Soft ethereal presence & Romans (Romans 10:13).', img:''};
+  if(i%2===0){
+    const keys=Object.keys(CHARACTERS);
+    const char=CHARACTERS[keys[(i/2)%keys.length]];
+    return {type:'character', id:`char_${char.key}_${i}`, title:char.name, desc:`${char.name} — a chimera guardian of the Café.`, img:char.img, key:char.key, answer:char.answer, music:(char.music||false)};
+  }
+  return {type:'lore', id:`lore_${i}`, title:'Mystery Fragment', desc:loreArr[i%loreArr.length], img:''};
+}
+
+function createGrid(){
+  grid.innerHTML='';
+  for(let i=0;i<TOTAL;i++){
+    const tile=document.createElement('div');
+    tile.className='tile';
+    tile.dataset.index=i;
+    const mapping=mapTile(i);
+    const stub=document.createElement('div');
+    stub.className='stub';
+    stub.textContent=mapping.title;
+    tile.appendChild(stub);
+
+    if(mapping.type==='portal'&&mapping.id==='portal_yeshua') tile.classList.add('portal','yeshua');
+    if(completed[i]) tile.classList.add('completed');
+
+    tile.addEventListener('click',()=>onTileClick(i,mapping));
+
+    tile.style.opacity=0; tile.style.transform='translateY(18px) scale(.98)';
+    setTimeout(()=>{tile.style.opacity=1; tile.style.transform='translateY(0) scale(1)';},60+i*18);
+    grid.appendChild(tile);
+  }
+}
+
+// ==== Quiz Data ====
+const quizData={
+  star:{
+    q:'What did Star weave the Café walls from?',
+    choices:['Moonlight','Cheese','Sunlight','Chocolate'],
+    answer:'Moonlight',
+    response:'Star beams with delight, the walls shimmer with moonlight magic!'
+  },
+  hans:{
+    q:'What powers Hans\' dimensional forge?',
+    choices:['Forge','Tea','Song','Wind'],
+    answer:'Forge',
+    response:'Hans nods approvingly, sparks of creation fly from the forge!'
+  },
+  chari:{
+    q:'What awakens Chari’s timelines?',
+    choices:['Timeline','Coffee','Sleep','Music'],
+    answer:'Timeline',
+    response:'Chari smiles, timelines ripple gently in her hands.'
+  },
+  milo:{
+    q:'Which herb does Milo whisper to?',
+    choices:['Basil','Sage','Rosemary','Thyme'],
+    answer:'Sage',
+    response:'The sage rustles happily as Milo hums a melody.'
+  },
+  miki:{
+    q:'What inspires Miki\'s portal music?',
+    choices:['Stars','Cats','Lab','Dreams'],
+    answer:'Dreams',
+    response:'Notes float into the air, forming glimmering dream bridges.'
+  }
+};
+
+function showQuiz(characterKey){
+  const data=quizData[characterKey];
+  if(!data) return;
+  overlay.classList.add('active');
+  modalBox.innerHTML=`<h3>${CHARACTERS[characterKey].name} asks:</h3><p>${data.q}</p>`;
+  data.choices.forEach(choice=>{
+    const btn=document.createElement('button');
+    btn.textContent=choice;
+    btn.className='btn';
+    btn.style.margin='4px';
+    btn.addEventListener('click',()=>{
+      modalBox.innerHTML=`<p>${data.response}</p>`;
+      completed[characterKey]=true;
+      saveAll();
+      setTimeout(()=>overlay.classList.remove('active'),2000);
+      createGrid();
+    });
+    modalBox.appendChild(btn);
+  });
+}
