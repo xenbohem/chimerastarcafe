@@ -1,1 +1,124 @@
-https://xenbohem.github.io/cerulean/soundtrack-december2025/
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Dream TV - Realms & Music</title>
+<style>
+body{margin:0;background:black;height:100vh;display:flex;justify-content:center;align-items:center;font-family:serif}
+#tv{width:360px;height:360px;border-radius:18px;border:3px solid rgba(180,220,255,.7);
+background:radial-gradient(circle,#3fa9c6,#061b2b);box-shadow:0 0 35px rgba(110,200,255,.6);
+position:relative}
+#screen{position:absolute;inset:18px;border-radius:12px;background:rgba(0,10,20,.6);padding:8px}
+#avatar{width:80px;height:80px;border-radius:50%;border:2px solid #9edcff;float:right}
+#text{font-size:13px;color:#e4f6ff;padding-right:90px}
+button{margin:5px;padding:6px 12px;border:none;border-radius:8px;
+background:rgba(140,200,255,.2);color:#dff5ff;cursor:pointer}
+button:hover{background:rgba(170,230,255,.5)}
+#menu{margin-top:10px}
+</style>
+</head>
+
+<body>
+
+<div id="tv">
+<div id="screen">
+
+<img id="avatar">
+
+<div id="text">
+<h3 id="title">Dream Realms</h3>
+<p id="desc">Choose a realm to awaken it.</p>
+</div>
+
+<div id="menu"></div>
+
+<div>
+<button onclick="musicMode()">Music Only</button>
+<button onclick="pauseMusic()">Pause</button>
+</div>
+
+</div>
+</div>
+
+<audio id="player"></audio>
+
+<script>
+const player = document.getElementById("player");
+
+const realms = [
+ {name:"Cafe", img:"cafe.png", song:"cafe.mp3", desc:"A café drifting between starlight and comfort."},
+ {name:"TeaGarden", img:"teagarden.png", song:"teagarden.mp3", desc:"Ancient tea leaves glow beneath cosmic moonlight."},
+ {name:"Zen Feelings", img:"zen.png", song:"zen.mp3", desc:"Emotion floats here like mist in the morning."},
+ {name:"The Way", img:"way.png", song:"way.mp3", desc:"A path that moves when you do not watch."},
+ {name:"Miki Music", img:"miki.png", song:"miki.mp3", desc:"Where sound becomes shape and color."},
+ {name:"Hans Lair", img:"hans.png", song:"hans.mp3", desc:"Tools, dreams, and hidden doors live here."},
+ {name:"Charis Rat Room", img:"charis.png", song:"charis.mp3", desc:"Tiny paws wander giant ideas."}
+];
+
+let currentTrack = 0;
+let musicModeOn = false;
+
+const avatar = document.getElementById("avatar");
+const title = document.getElementById("title");
+const desc = document.getElementById("desc");
+const menu = document.getElementById("menu");
+
+// Build Realm Buttons
+realms.forEach((r,i)=>{
+ let b=document.createElement("button");
+ b.innerText=r.name;
+ b.onclick=()=>enterRealm(i);
+ menu.appendChild(b);
+});
+
+// Enter Realm
+function enterRealm(i){
+ musicModeOn = false;
+ currentTrack = i;
+ displayRealm(i);
+ playTrack(i);
+}
+
+// Display
+function displayRealm(i){
+ avatar.src = realms[i].img;
+ title.innerText = realms[i].name;
+ desc.innerText = realms[i].desc;
+}
+
+// Play
+function playTrack(i){
+ player.src = realms[i].song;
+ player.play();
+}
+
+// Pause
+function pauseMusic(){
+ player.pause();
+}
+
+// MUSIC ONLY MODE
+function musicMode(){
+ musicModeOn = true;
+ avatar.src="";
+ title.innerText="Dream Radio";
+ desc.innerText="The realms now sing in order.";
+ playTrack(0);
+}
+
+// AUTO NEXT TRACK
+player.onended = ()=>{
+ currentTrack++;
+ if(currentTrack >= realms.length) currentTrack = 0;
+ if(musicModeOn){
+   playTrack(currentTrack);
+ } else {
+   playTrack(currentTrack);
+   displayRealm(currentTrack);
+ }
+};
+</script>
+
+</body>
+</html>
+
