@@ -22,7 +22,7 @@ body{
   overflow-y:auto;
 }
 
-/* ---------- INTRO CHOICE ---------- */
+/* ---------- INTRO ---------- */
 #introChoice{
   position:fixed;
   inset:0;
@@ -71,10 +71,7 @@ button.ghost{
   border-radius:12px;
   margin-right:20px;
 }
-.apprentice-dialogue .star-name{
-  color:var(--gold);
-  letter-spacing:2px;
-}
+.star-name{color:var(--gold);letter-spacing:2px;}
 .continue{cursor:pointer;color:var(--lav);margin-top:16px;text-align:right}
 
 /* ---------- MENU ---------- */
@@ -121,7 +118,7 @@ button.ghost{
 }
 .cup.success{box-shadow:0 0 25px rgba(203,183,255,.6);}
 
-/* steam */
+/* Steam */
 .steam{
   position:absolute;
   top:-30px;
@@ -176,7 +173,7 @@ button.ghost{
 }
 
 /* ---------- SPOON ---------- */
-.spoon {
+.spoon{
   position:absolute;
   width:10px;
   height:130px;
@@ -191,11 +188,9 @@ button.ghost{
   );
   border-radius:10px;
   filter:blur(.4px);
-  box-shadow:
-    0 0 6px rgba(255,220,180,.4),
-    inset 0 0 4px rgba(255,255,255,.4);
+  box-shadow:0 0 6px rgba(255,220,180,.4);
   display:none;
-  
+}
 .spoon::after{
   content:"";
   position:absolute;
@@ -203,22 +198,19 @@ button.ghost{
   left:-4px;
   width:18px;
   height:18px;
-  background:radial-gradient(
-    circle,
-    rgba(255,220,180,.8),
-    rgba(255,220,180,.2),
-    transparent
-  );
+  background:radial-gradient(circle,rgba(255,220,180,.8),transparent);
   border-radius:50%;
   filter:blur(2px);
 }
-@keyframes bobbleStir {
-  0%   { transform:rotate(-12deg) translateX(-6px); }
-  25%  { transform:rotate(10deg) translateX(6px); }
-  50%  { transform:rotate(-8deg) translateX(-4px); }
-  75%  { transform:rotate(8deg) translateX(4px); }
-  100% { transform:rotate(0deg) translateX(0); }
+
+@keyframes bobbleStir{
+  0%{transform:rotate(-12deg) translateX(-6px);}
+  25%{transform:rotate(10deg) translateX(6px);}
+  50%{transform:rotate(-8deg) translateX(-4px);}
+  75%{transform:rotate(8deg) translateX(4px);}
+  100%{transform:rotate(0deg) translateX(0);}
 }
+
 /* ---------- CODEX ---------- */
 #codex{
   position:fixed;
@@ -283,7 +275,6 @@ button.ghost{
     <hr>
     <div class="menu-item" onclick="addInfusion('milk')">Milk</div>
     <div class="menu-item" onclick="addInfusion('honey')">Honey</div>
-    <button onclick="openStarChat()">Ask STAR</button>
   </div>
 
   <div class="panel">
@@ -293,7 +284,7 @@ button.ghost{
       <div class="cup" id="cup"><div class="steam"></div></div>
     </div>
     <button onclick="stir()">Stir</button>
-    <button onclick="finish()">Serve</button>
+    <button onclick="serve()">Serve</button>
   </div>
 
   <div class="panel">
@@ -309,8 +300,6 @@ button.ghost{
   <div id="codexList"></div>
 </div>
 
-<audio id="bellSound" src="https://freesound.org/data/previews/341/341695_3248244-lq.mp3"></audio>
-
 <script>
 const apprenticeSteps=[
  "Welcome, apprentice.",
@@ -319,8 +308,12 @@ const apprenticeSteps=[
  "Stir with care.",
  "Serve with intention."
 ];
-let step=0,recipe=[],codex=[],stirred=false;
+
+let step=0, recipe=[], codex=[];
+let stirred=false, readyToServe=false;
+let currentOrder=[];
 const cup=document.getElementById("cup");
+const spoon=document.getElementById("spoon");
 
 function startTutorial(){
  introChoice.style.display="none";
@@ -347,7 +340,6 @@ function addBase(name){
  spawnOrb("base");
 }
 function addInfusion(t){
- if(recipe.includes(t))return;
  recipe.push(t);
  spawnSwirl(t);
  spawnOrb(t);
@@ -365,80 +357,61 @@ function spawnOrb(type){
  o.style.left=Math.random()*60+20+"%";
  cup.appendChild(o);
 }
+
 function stir(){
-  if(stirred) return;
-  stirred = true;
+ if(stirred) return;
+ stirred=true;
+ spoon.style.display="block";
+ spoon.style.animation="bobbleStir 1s ease-in-out 3";
 
-  spoon.style.display = "block";
-  spoon.style.animation = "bobbleStir 1s ease-in-out 3";
+ document.querySelectorAll(".swirl").forEach(s=>{
+  s.style.animationDuration="3s";
+ });
 
-  // Intensify swirls during stirring
+ setTimeout(()=>{
+  spoon.style.animation="none";
   document.querySelectorAll(".swirl").forEach(s=>{
-    s.style.animationDuration = "3s";
+   s.style.animationDuration="12s";
   });
-
-  setTimeout(()=>{
-    spoon.style.animation = "none";
-
-    // Swirls calm and stabilize
-    document.querySelectorAll(".swirl").forEach(s=>{
-      s.style.animationDuration = "12s";
-    });
-
-    readyToServe = true;
-    customerReaction.textContent = "The drink settles, awaiting service… ☕";
-
-  }, 3000);
-
-  });
-
-  setTimeout(()=>{
-    spoon.style.animation = "none";
-    
-    // Swirls calm and stabilize
-    document.querySelectorAll(".swirl").forEach(s=>{
-      s.style.animationDuration = "12s";
-    });
-
-    checkOrder();
-  }, 3000);
+  readyToServe=true;
+  customerReaction.textContent="The drink settles, awaiting service… ☕";
+ },3000);
 }
 
-let currentOrder=[];
-function generateOrder(){
- const bases=["Lavender Tea","Café Latte"];
- currentOrder=[bases[Math.floor(Math.random()*2)]];
- customerOrder.textContent="I would like "+currentOrder.join(", ");
-}
-  let readyToServe = false;
-}
-function checkOrder(){
- customerReaction.textContent="Customer is Satisfied With Their Order ☺";
+function serve(){
+ if(!readyToServe){
+  customerReaction.textContent="STAR whispers: Patience, apprentice.";
+  return;
+ }
+ customerReaction.textContent="Your customer is satisfied with their order ☺";
  codex.push(recipe.join(", "));
  renderCodex();
  codexPanel.classList.add("open");
  cup.classList.add("success");
+
+ setTimeout(resetCup,2000);
 }
 
-function finish(){
- recipe=[]; stirred=false;
+function resetCup(){
+ recipe=[];
+ stirred=false;
+ readyToServe=false;
+ cup.classList.remove("success");
  cup.innerHTML='<div class="steam"></div>';
  generateOrder();
+}
+
+function generateOrder(){
+ const bases=["Lavender Tea","Café Latte"];
+ currentOrder=[bases[Math.floor(Math.random()*2)]];
+ customerOrder.textContent="I would like "+currentOrder.join(", ");
+ customerReaction.textContent="";
 }
 
 function renderCodex(){
  codexList.innerHTML=codex.map((d,i)=>`<div>Drink ${i+1}: ${d}</div>`).join("");
 }
-function toggleCodex(){codexPanel.classList.toggle("open")}
-function openStarChat(){window.open("https://example.com","_blank")}
-
-exitBell.onclick=()=>{
- bellSound.play();
- if(confirm("Leave your shift?"))location.reload();
-};
-document.onkeydown=e=>{
- if(e.key==="f"){bellSound.play();exitBell.onclick();}
-};
+function toggleCodex(){codex.classList.toggle("open");}
 </script>
 </body>
-</html
+</html>
