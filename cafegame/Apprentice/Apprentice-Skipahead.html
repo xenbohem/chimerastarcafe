@@ -197,7 +197,13 @@ button.ghost{
   display:none;
 
 }
-
+@keyframes bobbleStir {
+  0%   { transform:rotate(-12deg) translateX(-6px); }
+  25%  { transform:rotate(10deg) translateX(6px); }
+  50%  { transform:rotate(-8deg) translateX(-4px); }
+  75%  { transform:rotate(8deg) translateX(4px); }
+  100% { transform:rotate(0deg) translateX(0); }
+}
 /* ---------- CODEX ---------- */
 #codex{
   position:fixed;
