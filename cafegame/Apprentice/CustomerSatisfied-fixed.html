@@ -395,6 +395,8 @@ function generateOrder(){
  currentOrder=[bases[Math.floor(Math.random()*2)]];
  customerOrder.textContent="I would like "+currentOrder.join(", ");
 }
+  let readyToServe = false;
+}
 function checkOrder(){
  customerReaction.textContent="Customer is Satisfied With Their Order ☺";
  codex.push(recipe.join(", "));
