@@ -270,6 +270,26 @@ button.ghost{opacity:.7}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
+  const defaultWorldState = {
+  playerName: "Apprentice",
+  gardenUnlocks: {
+    lavender:false,
+    chamomile:false,
+    tea:false,
+    coffee:false
+  },
+  cafeProgress: {
+    customersServed: 0,
+    apprenticeshipComplete: false
+  }
+};
+
+let worldState = JSON.parse(localStorage.worldState || "null");
+if(!worldState){
+  worldState = defaultWorldState;
+  localStorage.worldState = JSON.stringify(worldState);
+}
+
 let playerName="Apprentice";
 let step=0,recipe=[],codex=[],served=0;
 let stirred=false,ready=false,currentOrder=[];
