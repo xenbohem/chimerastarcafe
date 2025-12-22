@@ -217,6 +217,20 @@ button:hover{background:var(--lav);color:#1b1026}
     tea: false,
     coffee: false
   },
+    function unlock(){
+  const key = seedKey(seed);
+  worldState.gardenUnlocks[key] = true;
+
+  localStorage.worldState = JSON.stringify(worldState);
+
+  codexList.innerHTML += `<div>🌿 ${seed} cultivated</div>`;
+  codex.classList.add("open");
+
+  miloText.textContent = `${seed} remembers your care.`;
+
+  setTimeout(resetPlot, 2200);
+}
+
   cafeProgress: {
     customersServed: 0,
     apprenticeshipComplete: false
