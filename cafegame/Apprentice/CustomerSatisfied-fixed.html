@@ -372,9 +372,24 @@ function stir(){
   spoon.style.display = "block";
   spoon.style.animation = "bobbleStir 1s ease-in-out 3";
 
-  // Make swirls intensify while stirring
+  // Intensify swirls during stirring
   document.querySelectorAll(".swirl").forEach(s=>{
     s.style.animationDuration = "3s";
+  });
+
+  setTimeout(()=>{
+    spoon.style.animation = "none";
+
+    // Swirls calm and stabilize
+    document.querySelectorAll(".swirl").forEach(s=>{
+      s.style.animationDuration = "12s";
+    });
+
+    readyToServe = true;
+    customerReaction.textContent = "The drink settles, awaiting service… ☕";
+
+  }, 3000);
+
   });
 
   setTimeout(()=>{
