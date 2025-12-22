@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>STAR’s Nocturne Café + Milo’s Garden</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- html2canvas for membership card download -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<style>
+:root{
+  --bg:#1b1026;
+  --panel:#2a163d;
+  --gold:#d8b46a;
+  --lav:#cbb7ff;
+  --text:#eee6ff;
+}
+body{
+  margin:0;
+  background:radial-gradient(circle at top,#2b1742,var(--bg));
+  color:var(--text);
+  font-family:Georgia,serif;
+  overflow-y:auto;
+}
+
+/* ---------- INTRO ---------- */
+#introChoice{
+  position:fixed; inset:0;
+  background:rgba(0,0,0,.88);
+  display:flex; align-items:center; justify-content:center;
+  z-index:50;
+}
+.intro-box{
+  background:rgba(42,22,61,.96);
+  border:1px solid var(--gold); border-radius:22px;
+  padding:30px; max-width:420px; text-align:center;
+}
+.intro-box h2{color:var(--gold);letter-spacing:3px;}
+.intro-box button{width:100%;margin-top:12px;}
+button.ghost{
+  background:transparent; border:1px solid var(--lav); color:var(--lav);
+}
+
+/* ---------- APPRENTICE ---------- */
+#apprenticeScene{
+  position:fixed; inset:0;
+  display:none;
+  background:rgba(0,0,0,.85);
+  z-index:45; align-items:center; justify-content:center;
+}
+.apprentice-box{
+  display:flex; max-width:800px;
+  background:rgba(42,22,61,.95);
+  border:1px solid var(--gold);
+  border-radius:20px;
+  padding:20px;
+}
+.star-image{width:180px;border-radius:12px;margin-right:20px;}
+.star-name{color:var(--gold);letter-spacing:2px;}
+.continue{cursor:pointer;color:var(--lav);margin-top:16px;text-align:right}
+
+/* ---------- MENU ---------- */
+#menu{
+  display:none;
+  padding:40px;
+  min-height:100vh;
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:30px;
+}
+.panel{
+  background:rgba(42,22,61,.9);
+  border:1px solid var(--gold);
+  border-radius:20px;
+  padding:20px;
+}
+.panel h3{text-align:center;color:var(--gold);letter-spacing:3px;}
+.menu-item{
+  padding:12px;border-radius:12px;
+  background:rgba(255,255,255,.05); margin-bottom:8px;
+  cursor:pointer;
+}
+.menu-item:hover{background:rgba(203,183,255,.2);}
+
+/* ---------- CUP ---------- */
+.cup-wrap{position:relative;width:220px;height:220px;margin:auto;}
+.cup{
+  position:absolute; inset:20px;
+  border-radius:50%;
+  border:2px solid var(--gold);
+  overflow:hidden;
+}
+.cup.success{box-shadow:0 0 25px rgba(203,183,255,.6);}
+.steam{
+  position:absolute; top:-30px; left:50%;
+  width:6px; height:40px;
+  background:rgba(255,255,255,.6);
+  animation:rise 2s infinite;
+}
+@keyframes rise{
+  0%{opacity:0;transform:translateY(0)}
+  50%{opacity:1}
+  100%{opacity:0;transform:translateY(-30px)}
+}
+.swirl{
+  position:absolute; inset:-20%;
+  border-radius:50%;
+  mix-blend-mode:screen;
+  animation:spin 12s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.swirl.base{background:conic-gradient(#7a4a28,#4b2b15,#7a4a28);}
+.swirl.milk{background:conic-gradient(#fff,#e8dcc7,#fff);}
+.swirl.honey{background:conic-gradient(#ffcc66,#c9952f,#ffcc66);}
+.orb{
+  position:absolute; width:14px; height:14px; border-radius:50%;
+  animation:orbit 6s linear infinite;
+}
+.orb::after{
+  content:""; inset:-4px; position:absolute;
+  background:inherit; border-radius:50%; filter:blur(6px);
+}
+.orb.base{background:#7a4a28;}
+.orb.milk{background:#fff6e6;}
+.orb.honey{background:#ffcc66;}
+@keyframes orbit{
+  from{transform:rotate(0deg) translateX(40px)}
+  to{transform:rotate(360deg) translateX(40px)}
+}
+.spoon{
+  position:absolute; width:10px; height:130px;
+  left:50%; top:10px; transform-origin:bottom center;
+  background:linear-gradient(to right,rgba(255,215,160,.9),rgba(220,180,120,.7),rgba(255,215,160,.9));
+  border-radius:10px; filter:blur(.4px); box-shadow:0 0 6px rgba(255,220,180,.4);
+  display:none;
+}
+.spoon::after{
+  content:""; position:absolute; bottom:-6px; left:-4px;
+  width:18px; height:18px; background:radial-gradient(circle,rgba(255,220,180,.8),transparent);
+  border-radius:50%; filter:blur(2px);
+}
+@keyframes bobbleStir{
+  0%{transform:rotate(-12deg) translateX(-6px);}
+  25%{transform:rotate(10deg) translateX(6px);}
+  50%{transform:rotate(-8deg) translateX(-4px);}
+  75%{transform:rotate(8deg) translateX(4px);}
+  100%{transform:rotate(0deg) translateX(0);}
+}
+
+/* ---------- CODEX ---------- */
+#codex{position:fixed; bottom:-360px; left:50%; transform:translateX(-50%);
+  width:420px; background:rgba(42,22,61,.96); border:1px solid var(--gold);
+  border-radius:20px 20px 0 0; padding:20px; transition:.6s;}
+#codex.open{bottom:0;}
+
+/* ---------- CONFIRMATION CARD ---------- */
+#confirmationCard{display:none; position:fixed; inset:0; z-index:55; display:flex; align-items:center; justify-content:center;}
+.card-overlay{position:absolute; inset:0; background:rgba(0,0,0,.9);}
+.card-content{
+  position:relative;
+  background:linear-gradient(135deg,#2a163d,#1b1026);
+  color:#eee6ff; border:2px solid #d8b46a; border-radius:22px; padding:30px; text-align:center; width:360px; z-index:51;
+}
+.card-content h2{color:#d8b46a; letter-spacing:3px; margin-bottom:12px;}
+.card-content h3{color:#cbb7ff; margin-bottom:16px;}
+.card-content p{font-size:14px; margin-bottom:20px;}
+.card-content button{margin:6px 0; padding:8px 14px; border-radius:12px; border:1px solid #cbb7ff; background:transparent; color:#cbb7ff; cursor:pointer;}
+.card-content button:hover{background:#cbb7ff; color:#1b1026;}
+
+/* ---------- MILO GARDEN ---------- */
+#miloGarden{display:none; position:fixed; inset:0; background:radial-gradient(circle at top,#1b1026,#2a163d); color:#eee6ff; padding:20px; overflow-y:auto; z-index:45;}
+.garden-panel{max-width:600px; margin:auto; text-align:center;}
+.tools button{margin:5px; padding:8px 12px; border-radius:10px; border:1px solid #cbb7ff; background:transparent; color:#cbb7ff; cursor:pointer;}
+.tools button:hover{background:#cbb7ff; color:#1b1026;}
+.garden-plot{margin-top:20px; height:300px; border:2px dashed #d8b46a; border-radius:12px; position:relative;}
+.seed{position:absolute; width:20px; height:20px; border-radius:50%; background:#cbb7ff; top:0; left:0;}
+@media(max-width:768px){#menu{grid-template-columns:1fr;} #codex{width:95%;}}
+</style>
+</head>
+
+<body>
+
+<!-- Intro -->
+<div id="introChoice">
+  <div class="intro-box">
+    <h2>✦ STAR’S NOCTURNE CAFÉ ✦</h2>
+    <p>The teapot hums softly.</p>
+    <button onclick="startTutorial()">Become an Apprentice</button>
+    <button class="ghost" onclick="skipTutorial()">Skip the Ritual</button>
+  </div>
+</div>
+
+<!-- Apprentice Intro -->
+<div id="apprenticeScene">
+  <div class="apprentice-box">
+    <img class="star-image" src="https://i.imgur.com/2P8WovO.png">
+    <div>
+      <div class="star-name">✦ STAR ✦</div>
+      <div id="apprenticeText"></div>
+      <div class="continue" onclick="nextStep()">Next →</div>
+    </div>
+  </div>
+</div>
+
+<!-- Café Menu -->
+<div id="menu">
+  <div class="panel">
+    <h3>MENU</h3>
+    <div class="menu-item" onclick="addBase('Lavender Tea')">Lavender Tea</div>
+    <div class="menu-item" onclick="addBase('Café Latte')">Café Latte</div>
+    <hr>
+    <div class="menu-item" onclick="addInfusion('milk')">Milk</div>
+    <div class="menu-item" onclick="addInfusion('honey')">Honey</div>
+  </div>
+
+  <div class="panel">
+    <h3>Your Cup</h3>
+    <div class="cup-wrap">
+      <div class="spoon" id="spoon"></div>
+      <div class="cup" id="cup"><div class="steam"></div></div>
+    </div>
+    <button onclick="stir()">Stir</button>
+    <button onclick="serve()">Serve</button>
+  </div>
+
+  <div class="panel">
+    <h3>Customer</h3>
+    <p id="customerOrder"></p>
+    <p id="customerReaction"></p>
+  </div>
+</div>
+
+<!-- Codex -->
+<div id="codex">
+  <div onclick="toggleCodex()" style="cursor:pointer;color:var(--lav)">✦ Close Codex ✦</div>
+  <h3>Codex</h3>
+  <div id="codexList"></div>
+</div>
+
+<!-- Confirmation Card -->
+<div id="confirmationCard">
+  <div class="card-overlay"></div>
+  <div class="card-content">
+    <h2>✦ STAR'S CAFÉ ✦</h2>
+    <h3>Official Apprentice Member</h3>
+    <p>Congratulations! You’ve served with care and earned your membership.</p>
+    <button onclick="downloadCard()">Download Card</button>
+    <div style="margin-top:12px;">
+      <button onclick="enterGarden()">Step Into Milo's Garden 🌱</button>
+      <button onclick="joinDiscord()">Join the Café Discord ✦</button>
+    </div>
+  </div>
+</div>
+
+<!-- Milo Garden -->
+<div id="miloGarden">
+  <div class="garden-panel">
+    <h2>🌱 Milo's Garden</h2>
+    <p>Help Milo plant seeds and tend the garden.</p>
+    <div class="tools">
+      <button onclick="selectTool('shovel')">Shovel</button>
+      <button onclick="selectTool('water')">Water</button>
+      <button onclick="selectTool('seed')">Seed</button>
+    </div>
+    <div class="garden-plot"></div>
+  </div>
+</div>
+
+<script>
+/* ---------- Variables ---------- */
+const apprenticeSteps=["Welcome, apprentice.","Choose a base.","Add infusions.","Stir with care.","Serve with intention."];
+let step=0, recipe=[], codex=[], servedCount=0;
+let stirred=false, readyToServe=false;
+let currentOrder=[];
+const cup=document.getElementById("cup");
+const spoon=document.getElementById("spoon");
+const codexPanel=document.getElementById("codex");
+const confirmationCard=document.getElementById("confirmationCard");
+
+/* ---------- Intro Functions ---------- */
+function startTutorial(){introChoice.style.display="none"; apprenticeScene.style.display="flex"; nextStep();}
+function skipTutorial(){introChoice.style.display="none"; menu.style.display="grid"; generateOrder();}
+function nextStep(){
+  apprenticeText.textContent=apprenticeSteps[step++]||"Begin.";
+  if(step>apprenticeSteps.length){apprenticeScene.style.display="none"; menu.style.display="grid"; generateOrder();}
+}
+
+/* ---------- Menu & Cup ---------- */
+function addBase(name){recipe=[name]; spawnSwirl("base"); spawnOrb("base");}
+function addInfusion(t){recipe.push(t); spawnSwirl(t); spawnOrb(t);}
+function spawnSwirl(type){const s=document.createElement("div"); s.className="swirl "+type; cup.appendChild(s);}
+function spawnOrb(type){const o=document.createElement("div"); o.className="orb "+type; o.style.top=Math.random()*60+20+"%"; o.style.left=Math.random()*60+20+"%"; cup.appendChild(o);}
+
+/* ---------- Stir ---------- */
+function stir(){if(stirred) return; stirred=true; spoon.style.display="block"; spoon.style.animation="bobbleStir 1s ease-in-out 3";
+document.querySelectorAll(".swirl").forEach(s=>{s.style.animationDuration="3s";});
+setTimeout(()=>{spoon.style.animation="none";document.querySelectorAll(".swirl").forEach(s=>{s.style.animationDuration="12s";}); readyToServe=true; customerReaction.textContent="The drink settles, awaiting service… ☕";},3000);}
+
+/* ---------- Serve ---------- */
+function serve(){
+  if(!readyToServe){customerReaction.textContent="STAR whispers: Patience, apprentice."; return;}
+  customerReaction.textContent="Your customer is satisfied with their order ☺";
+  codex.push(recipe.join(", "));
+  renderCodex(); codexPanel.classList.add("open");
+  cup.classList.add("success"); spoon.style.display="none";
+  servedCount++;
+  if(servedCount>=3){showConfirmationCard(); return;}
+  setTimeout(()=>{resetCup(); generateOrder();},2200);
+}
+
+function resetCup(){recipe=[]; stirred=false; readyToServe=false; cup.classList.remove("success"); cup.innerHTML='<div class="steam"></div>';}
+function generateOrder(){const bases=["Lavender Tea","Café Latte"]; currentOrder=[bases[Math.floor(Math.random()*bases.length)]]; customerOrder.textContent="I would like "+currentOrder[0]; customerReaction.textContent="";}
+function renderCodex(){codexList.innerHTML=codex.map((d,i)=>`<div>Drink ${i+1}: ${d}</div>`).join("");}
+function toggleCodex(){codexPanel.classList.toggle("open");}
+
+/* ---------- Confirmation Card ---------- */
+function showConfirmationCard(){menu.style.display="none"; confirmationCard.style.display="flex";}
+function downloadCard(){
+  const card = document.querySelector('.card-content');
+  html2canvas(card).then(canvas => {const link=document.createElement('a'); link.download="STAR_Cafe_Membership.png"; link.href=canvas.toDataURL(); link.click();});
+}
+function joinDiscord(){alert("Redirect to Café Discord (or placeholder link)");}
+const ingredientToSeed={"Lavender Tea":"lavender","Café Latte":"coffee","milk":"chamomile","honey":"camellia_sinensis"};
+function enterGarden(){
+  confirmationCard.style.display="none"; miloGarden.style.display="block";
+  const gardenPlot=document.querySelector('.garden-plot'); gardenPlot.innerHTML="";
+  codex.forEach(d=>{
+    d.split(", ").forEach(ing=>{
+      const seedType = ingredientToSeed[ing];
+      if(seedType){
+        const seedEl=document.createElement('div');
+        seedEl.className='seed'; seedEl.style.top=Math.random()*260+"px"; seedEl.style.left=Math.random()*260+"px"; seedEl.title=seedType;
+        gardenPlot.appendChild(seedEl);
+      }
+    });
+  });
+}
+
+/* ---------- Garden Tools ---------- */
+let selectedTool=null;
+function selectTool(tool){selectedTool=tool; console.log("Selected tool:",tool);}
+</script>
+</body>
+</html>
