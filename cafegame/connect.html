@@ -209,6 +209,25 @@ button:hover{background:var(--lav);color:#1b1026}
 </div>
 
 <script>
+  const defaultWorldState = {
+  playerName: localStorage.playerName || "Apprentice",
+  gardenUnlocks: {
+    lavender: false,
+    chamomile: false,
+    tea: false,
+    coffee: false
+  },
+  cafeProgress: {
+    customersServed: 0,
+    apprenticeshipComplete: false
+  }
+};
+
+let worldState = JSON.parse(localStorage.worldState || "null");
+if(!worldState){
+  worldState = defaultWorldState;
+}
+
 let name="",served=0;
 let recipe=[],ready=false;
 let currentOrder=[];
