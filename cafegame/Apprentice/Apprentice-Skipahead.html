@@ -350,14 +350,28 @@ function spawnOrb(type){
  o.style.left=Math.random()*60+20+"%";
  cup.appendChild(o);
 }
-
 function stir(){
- if(stirred)return;
- stirred=true;
- spoon.style.display="block";
- spoon.style.transition="transform 3s";
- spoon.style.transform="rotate(1080deg)";
- setTimeout(()=>checkOrder(),3000);
+  if(stirred) return;
+  stirred = true;
+
+  spoon.style.display = "block";
+  spoon.style.animation = "bobbleStir 1s ease-in-out 3";
+
+  // Make swirls intensify while stirring
+  document.querySelectorAll(".swirl").forEach(s=>{
+    s.style.animationDuration = "3s";
+  });
+
+  setTimeout(()=>{
+    spoon.style.animation = "none";
+    
+    // Swirls calm and stabilize
+    document.querySelectorAll(".swirl").forEach(s=>{
+      s.style.animationDuration = "12s";
+    });
+
+    checkOrder();
+  }, 3000);
 }
 
 let currentOrder=[];
