@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>STAR’s Nocturne Cafe</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+:root{
+  --bg:#1b1026;
+  --panel:#2a163d;
+  --gold:#d8b46a;
+  --lav:#cbb7ff;
+  --text:#eee6ff;
+}
+
+body{
+  margin:0;
+  background:radial-gradient(circle at top,#2b1742,var(--bg));
+  color:var(--text);
+  font-family:Georgia,serif;
+  overflow-y:auto;
+}
+
+/* ---------- INTRO CHOICE ---------- */
+#introChoice{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.88);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:30;
+}
+.intro-box{
+  background:rgba(42,22,61,.96);
+  border:1px solid var(--gold);
+  border-radius:22px;
+  padding:30px;
+  max-width:420px;
+  text-align:center;
+}
+.intro-box h2{color:var(--gold);letter-spacing:3px;}
+.intro-box button{width:100%;margin-top:12px;}
+button.ghost{
+  background:transparent;
+  border:1px solid var(--lav);
+  color:var(--lav);
+}
+
+/* ---------- APPRENTICE ---------- */
+#apprenticeScene{
+  position:fixed;
+  inset:0;
+  display:none;
+  background:rgba(0,0,0,.85);
+  z-index:25;
+  align-items:center;
+  justify-content:center;
+}
+.apprentice-box{
+  display:flex;
+  max-width:800px;
+  background:rgba(42,22,61,.95);
+  border:1px solid var(--gold);
+  border-radius:20px;
+  padding:20px;
+}
+.star-image{
+  width:180px;
+  border-radius:12px;
+  margin-right:20px;
+}
+.apprentice-dialogue .star-name{
+  color:var(--gold);
+  letter-spacing:2px;
+}
+.continue{cursor:pointer;color:var(--lav);margin-top:16px;text-align:right}
+
+/* ---------- MENU ---------- */
+#menu{
+  display:none;
+  padding:40px;
+  min-height:100vh;
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:30px;
+}
+
+/* ---------- PANELS ---------- */
+.panel{
+  background:rgba(42,22,61,.9);
+  border:1px solid var(--gold);
+  border-radius:20px;
+  padding:20px;
+}
+.panel h3{text-align:center;color:var(--gold);letter-spacing:3px;}
+
+.menu-item{
+  padding:12px;
+  border-radius:12px;
+  background:rgba(255,255,255,.05);
+  margin-bottom:8px;
+  cursor:pointer;
+}
+.menu-item:hover{background:rgba(203,183,255,.2);}
+
+/* ---------- CUP ---------- */
+.cup-wrap{
+  position:relative;
+  width:220px;
+  height:220px;
+  margin:auto;
+}
+.cup{
+  position:absolute;
+  inset:20px;
+  border-radius:50%;
+  border:2px solid var(--gold);
+  overflow:hidden;
+}
+.cup.success{box-shadow:0 0 25px rgba(203,183,255,.6);}
+
+/* steam */
+.steam{
+  position:absolute;
+  top:-30px;
+  left:50%;
+  width:6px;
+  height:40px;
+  background:rgba(255,255,255,.6);
+  animation:rise 2s infinite;
+}
+@keyframes rise{
+  0%{opacity:0;transform:translateY(0)}
+  50%{opacity:1}
+  100%{opacity:0;transform:translateY(-30px)}
+}
+
+/* ---------- SWIRLS ---------- */
+.swirl{
+  position:absolute;
+  inset:-20%;
+  border-radius:50%;
+  mix-blend-mode:screen;
+  animation:spin 12s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.swirl.base{background:conic-gradient(#7a4a28,#4b2b15,#7a4a28);}
+.swirl.milk{background:conic-gradient(#fff,#e8dcc7,#fff);}
+.swirl.honey{background:conic-gradient(#ffcc66,#c9952f,#ffcc66);}
+
+/* ---------- ORBS ---------- */
+.orb{
+  position:absolute;
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  animation:orbit 6s linear infinite;
+}
+.orb::after{
+  content:"";
+  inset:-4px;
+  position:absolute;
+  background:inherit;
+  border-radius:50%;
+  filter:blur(6px);
+}
+.orb.base{background:#7a4a28;}
+.orb.milk{background:#fff6e6;}
+.orb.honey{background:#ffcc66;}
+
+@keyframes orbit{
+  from{transform:rotate(0deg) translateX(40px)}
+  to{transform:rotate(360deg) translateX(40px)}
+}
+
+/* ---------- SPOON ---------- */
+.spoon {
+  position:absolute;
+  width:10px;
+  height:130px;
+  left:50%;
+  top:10px;
+  transform-origin:bottom center;
+  background:linear-gradient(
+    to right,
+    rgba(255,215,160,.9),
+    rgba(220,180,120,.7),
+    rgba(255,215,160,.9)
+  );
+  border-radius:10px;
+  filter:blur(.4px);
+  box-shadow:
+    0 0 6px rgba(255,220,180,.4),
+    inset 0 0 4px rgba(255,255,255,.4);
+  display:none;
+  
+.spoon::after{
+  content:"";
+  position:absolute;
+  bottom:-6px;
+  left:-4px;
+  width:18px;
+  height:18px;
+  background:radial-gradient(
+    circle,
+    rgba(255,220,180,.8),
+    rgba(255,220,180,.2),
+    transparent
+  );
+  border-radius:50%;
+  filter:blur(2px);
+}
+@keyframes bobbleStir {
+  0%   { transform:rotate(-12deg) translateX(-6px); }
+  25%  { transform:rotate(10deg) translateX(6px); }
+  50%  { transform:rotate(-8deg) translateX(-4px); }
+  75%  { transform:rotate(8deg) translateX(4px); }
+  100% { transform:rotate(0deg) translateX(0); }
+}
+/* ---------- CODEX ---------- */
+#codex{
+  position:fixed;
+  bottom:-360px;
+  left:50%;
+  transform:translateX(-50%);
+  width:420px;
+  background:rgba(42,22,61,.96);
+  border:1px solid var(--gold);
+  border-radius:20px 20px 0 0;
+  padding:20px;
+  transition:.6s;
+}
+#codex.open{bottom:0}
+
+/* ---------- EXIT ---------- */
+#exitBell{
+  position:fixed;
+  top:20px;
+  right:20px;
+  cursor:pointer;
+  font-size:26px;
+}
+
+/* ---------- MOBILE ---------- */
+@media(max-width:768px){
+  #menu{grid-template-columns:1fr;}
+  #codex{width:95%;}
+}
+</style>
+</head>
+
+<body>
+
+<div id="introChoice">
+  <div class="intro-box">
+    <h2>✦ STAR’S NOCTURNE CAFE ✦</h2>
+    <p>The teapot hums softly.</p>
+    <button onclick="startTutorial()">Become an Apprentice</button>
+    <button class="ghost" onclick="skipTutorial()">Skip the Ritual</button>
+  </div>
+</div>
+
+<div id="apprenticeScene">
+  <div class="apprentice-box">
+    <img class="star-image" src="https://i.imgur.com/2P8WovO.png">
+    <div>
+      <div class="star-name">✦ STAR ✦</div>
+      <div id="apprenticeText"></div>
+      <div class="continue" onclick="nextStep()">Next →</div>
+    </div>
+  </div>
+</div>
+
+<div id="exitBell">🔔</div>
+
+<div id="menu">
+  <div class="panel">
+    <h3>MENU</h3>
+    <div class="menu-item" onclick="addBase('Lavender Tea')">Lavender Tea</div>
+    <div class="menu-item" onclick="addBase('Café Latte')">Café Latte</div>
+    <hr>
+    <div class="menu-item" onclick="addInfusion('milk')">Milk</div>
+    <div class="menu-item" onclick="addInfusion('honey')">Honey</div>
+    <button onclick="openStarChat()">Ask STAR</button>
+  </div>
+
+  <div class="panel">
+    <h3>Your Cup</h3>
+    <div class="cup-wrap">
+      <div class="spoon" id="spoon"></div>
+      <div class="cup" id="cup"><div class="steam"></div></div>
+    </div>
+    <button onclick="stir()">Stir</button>
+    <button onclick="finish()">Serve</button>
+  </div>
+
+  <div class="panel">
+    <h3>Customer</h3>
+    <p id="customerOrder"></p>
+    <p id="customerReaction"></p>
+  </div>
+</div>
+
+<div id="codex">
+  <div onclick="toggleCodex()" style="cursor:pointer;color:var(--lav)">✦ Close Codex ✦</div>
+  <h3>Codex</h3>
+  <div id="codexList"></div>
+</div>
+
+<audio id="bellSound" src="https://freesound.org/data/previews/341/341695_3248244-lq.mp3"></audio>
+
+<script>
+const apprenticeSteps=[
+ "Welcome, apprentice.",
+ "Choose a base.",
+ "Add infusions.",
+ "Stir with care.",
+ "Serve with intention."
+];
+let step=0,recipe=[],codex=[],stirred=false;
+const cup=document.getElementById("cup");
+
+function startTutorial(){
+ introChoice.style.display="none";
+ apprenticeScene.style.display="flex";
+ nextStep();
+}
+function skipTutorial(){
+ introChoice.style.display="none";
+ menu.style.display="grid";
+ generateOrder();
+}
+function nextStep(){
+ apprenticeText.textContent=apprenticeSteps[step++]||"Begin.";
+ if(step>apprenticeSteps.length){
+  apprenticeScene.style.display="none";
+  menu.style.display="grid";
+  generateOrder();
+ }
+}
+
+function addBase(name){
+ recipe=[name];
+ spawnSwirl("base");
+ spawnOrb("base");
+}
+function addInfusion(t){
+ if(recipe.includes(t))return;
+ recipe.push(t);
+ spawnSwirl(t);
+ spawnOrb(t);
+}
+
+function spawnSwirl(type){
+ const s=document.createElement("div");
+ s.className="swirl "+type;
+ cup.appendChild(s);
+}
+function spawnOrb(type){
+ const o=document.createElement("div");
+ o.className="orb "+type;
+ o.style.top=Math.random()*60+20+"%";
+ o.style.left=Math.random()*60+20+"%";
+ cup.appendChild(o);
+}
+function stir(){
+  if(stirred) return;
+  stirred = true;
+
+  spoon.style.display = "block";
+  spoon.style.animation = "bobbleStir 1s ease-in-out 3";
+
+  // Make swirls intensify while stirring
+  document.querySelectorAll(".swirl").forEach(s=>{
+    s.style.animationDuration = "3s";
+  });
+
+  setTimeout(()=>{
+    spoon.style.animation = "none";
+    
+    // Swirls calm and stabilize
+    document.querySelectorAll(".swirl").forEach(s=>{
+      s.style.animationDuration = "12s";
+    });
+
+    checkOrder();
+  }, 3000);
+}
+
+let currentOrder=[];
+function generateOrder(){
+ const bases=["Lavender Tea","Café Latte"];
+ currentOrder=[bases[Math.floor(Math.random()*2)]];
+ customerOrder.textContent="I would like "+currentOrder.join(", ");
+}
+function checkOrder(){
+ customerReaction.textContent="Customer is Satisfied With Their Order ☺";
+ codex.push(recipe.join(", "));
+ renderCodex();
+ codexPanel.classList.add("open");
+ cup.classList.add("success");
+}
+
+function finish(){
+ recipe=[]; stirred=false;
+ cup.innerHTML='<div class="steam"></div>';
+ generateOrder();
+}
+
+function renderCodex(){
+ codexList.innerHTML=codex.map((d,i)=>`<div>Drink ${i+1}: ${d}</div>`).join("");
+}
+function toggleCodex(){codexPanel.classList.toggle("open")}
+function openStarChat(){window.open("https://example.com","_blank")}
+
+exitBell.onclick=()=>{
+ bellSound.play();
+ if(confirm("Leave your shift?"))location.reload();
+};
+document.onkeydown=e=>{
+ if(e.key==="f"){bellSound.play();exitBell.onclick();}
+};
+</script>
+</body>
+</html
